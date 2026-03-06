@@ -1,10 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  Input,
-  OnInit,
-  inject,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { Observable, combineLatest, map } from 'rxjs';
 import { BoxState } from '../../services/box-state';
@@ -15,35 +9,8 @@ import { SelectionUi } from '../../services/selection-ui';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AsyncPipe],
-  template: `
-    <div
-      class="option-item"
-      [class.option-item--selected]="isSelected$ | async"
-      (click)="onOptionClick()"
-      role="option"
-    >
-      <span class="option-item__label">{{ label }}</span>
-      <span class="option-item__value">{{ value }}</span>
-    </div>
-  `,
-  styles: [
-    `
-    .option-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background 0.1s ease;
-    }
-    .option-item:hover { background: #f3f4f6; }
-    .option-item--selected { background: #dbeafe; }
-    .option-item--selected:hover { background: #bfdbfe; }
-    .option-item__label { font-weight: 500; color: #111827; }
-    .option-item__value { font-size: 12px; color: #6b7280; }
-  `,
-  ],
+  templateUrl: './option-item.html',
+  styleUrls: ['./option-item.css'],
 })
 export class OptionItem implements OnInit {
   @Input({ required: true }) optionId!: string;
@@ -59,9 +26,7 @@ export class OptionItem implements OnInit {
   isSelected$!: Observable<boolean>;
 
   ngOnInit(): void {
-    const option = this.boxStateService.options.find(
-      (o) => o.id === this.optionId
-    )!;
+    const option = this.boxStateService.options.find((o) => o.id === this.optionId)!;
     this.label = option.label;
     this.value = option.value;
 
@@ -72,7 +37,7 @@ export class OptionItem implements OnInit {
       map(([activeBoxId, selections]) => {
         if (activeBoxId === null) return false;
         return selections[activeBoxId] === this.optionId;
-      })
+      }),
     );
   }
 

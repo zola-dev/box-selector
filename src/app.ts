@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { AsyncPipe } from '@angular/common';
+import { AsyncPipe, DecimalPipe } from '@angular/common';
 import { BoxList } from './components/box-list/box-list';
 import { OptionSelector } from './components/option-selector/option-selector';
 import { BoxState } from './services/box-state';
@@ -17,13 +17,14 @@ import { map } from 'rxjs/operators';
   selector: 'app-root',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AsyncPipe, BoxList, OptionSelector],
+  imports: [AsyncPipe, DecimalPipe, BoxList, OptionSelector],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
 export class App {
   private readonly boxStateService = inject(BoxState);
   private readonly selectionUiService = inject(SelectionUi);
+  readonly totalScore$ = this.boxStateService.totalScore$;
 
   // Drive @if in the template — null means no active box (falsy), a number means active (truthy)
   // readonly hasActiveBox$ = this.selectionUiService.activeBoxId$;

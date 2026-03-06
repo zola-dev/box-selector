@@ -3,6 +3,9 @@
     <h1 class="app__title">
       Box Selector <span class="app__subtitle">RxJS version</span>
     </h1>
+    <div class="total-score">
+      Total score: {{ totalScore$ | async | number:'1.1-1' }}
+    </div>
     <button
       class="btn btn--danger"
       (click)="onClearAll()"

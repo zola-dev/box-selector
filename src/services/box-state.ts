@@ -1,11 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, map } from 'rxjs';
-import {
-  BOX_COUNT,
-  OPTIONS,
-  Option,
-  STORAGE_KEY,
-} from '../models/options.model';
+import { BOX_COUNT, OPTIONS, Option, STORAGE_KEY } from '../models/options.model';
 
 /**
  * BoxStateService
@@ -20,9 +15,9 @@ import {
 @Injectable({ providedIn: 'root' })
 export class BoxState {
   // Map of boxId (0-based index) → selected optionId or null
-  private readonly selectionsSubject = new BehaviorSubject<
-    Record<number, string | null>
-  >(this.loadFromStorage());
+  private readonly selectionsSubject = new BehaviorSubject<Record<number, string | null>>(
+    this.loadFromStorage(),
+  );
 
   // Public stream — components subscribe to this
   readonly selections$: Observable<Record<number, string | null>> =
@@ -39,9 +34,7 @@ export class BoxState {
    * Components use this with their own boxId to get only what they need.
    */
   getSelectionForBox$(boxId: number): Observable<string | null> {
-    return this.selections$.pipe(
-      map((selections) => selections[boxId] ?? null)
-    );
+    return this.selections$.pipe(map((selections) => selections[boxId] ?? null));
   }
 
   /**
@@ -50,9 +43,7 @@ export class BoxState {
    */
   getSelectedOption$(boxId: number): Observable<Option | null> {
     return this.getSelectionForBox$(boxId).pipe(
-      map((optionId) =>
-        optionId ? this.options.find((o) => o.id === optionId) ?? null : null
-      )
+      map((optionId) => (optionId ? (this.options.find((o) => o.id === optionId) ?? null) : null)),
     );
   }
 
@@ -97,4 +88,15 @@ export class BoxState {
       // Silently ignore storage errors (e.g. private browsing quota)
     }
   }
+
+  readonly totalScore$: Observable<number> = this.selections$.pipe(
+    map((selections) => {
+      return Object.values(selections)
+        .filter((optionId): optionId is string => optionId !== null)
+        .reduce((sum, optionId) => {
+          const option = this.options.find((o) => o.id === optionId);
+          return sum + (option?.score ?? 0);
+        }, 0);
+    }),
+  );
 }

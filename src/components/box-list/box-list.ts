@@ -13,22 +13,8 @@ import { BoxState } from '../../services/box-state';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [Box],
-  template: `
-    <div class="box-list">
-      @for (boxId of boxIds; track boxId) {
-        <app-box [boxId]="boxId" />
-      }
-    </div>
-  `,
-  styles: [
-    `
-    .box-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-  `,
-  ],
+  templateUrl: './box-list.html',
+  styleUrls: ['./box-list.css'],
 })
 export class BoxList {
   private readonly boxStateService = inject(BoxState);
