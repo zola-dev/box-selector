@@ -1,0 +1,30 @@
+<div class="app">
+  <header class="app__header">
+    <h1 class="app__title">
+      Box Selector <span class="app__subtitle">RxJS version</span>
+    </h1>
+    <button
+      class="btn btn--danger"
+      (click)="onClearAll()"
+      [attr.aria-label]="'Remove all selections'"
+    >
+      Clear all
+    </button>
+  </header>
+
+  <main class="app__main">
+    <!-- Box grid -->
+    <section class="app__boxes">
+      <app-box-list />
+    </section>
+
+    <!-- Option selector — only visible when a box is active -->
+    <aside class="app__selector">
+      @if (hasActiveBox$ | async) {
+      <app-option-selector />
+      } @else {
+      <p class="app__hint">Click a box to choose an option</p>
+      }
+    </aside>
+  </main>
+</div>
