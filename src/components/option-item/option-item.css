@@ -2,25 +2,28 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.1s ease;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
 }
+
 .option-item:hover {
-  background: #f3f4f6;
+  background: var(--color-border-soft);
 }
+
 .option-item--selected {
-  background: #dbeafe;
+  background: var(--color-accent-soft);
 }
+
 .option-item--selected:hover {
-  background: #bfdbfe;
+  background: var(--color-accent-softer);
 }
+
 .option-item__label {
   font-weight: 500;
-  color: #111827;
+  color: var(--color-text-primary);
 }
+
 .option-item__value {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--color-text-muted);
 }

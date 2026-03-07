@@ -1,5 +1,5 @@
 .box-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}

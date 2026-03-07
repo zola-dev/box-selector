@@ -1,9 +1,9 @@
 <div
-class="option-item"
-[class.option-item--selected]="isSelected$ | async"
-(click)="onOptionClick()"
-role="option"
+  class="option-item clickable-card"
+  [class.option-item--selected]="isSelected$ | async"
+  (click)="onOptionClick()"
+  role="option"
 >
-<span class="option-item__label">{{ label }}</span>
-<span class="option-item__value">{{ value }}</span>
+  <span class="option-item__label">{{ label }}</span>
+  <span class="option-item__value">{{ value }}</span>
 </div>

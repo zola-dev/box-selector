@@ -4,29 +4,34 @@
   margin: 0 auto;
   padding: 24px;
 }
+
 .app__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 24px;
 }
+
 .app__title {
   margin: 0;
   font-size: 20px;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text-primary);
 }
+
 .app__subtitle {
   font-size: 14px;
   font-weight: 400;
-  color: #6b7280;
+  color: var(--color-text-muted);
   margin-left: 8px;
 }
+
 .app__main {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
+
 .app__boxes {
   width: 100%;
 }
@@ -34,25 +39,34 @@
 .app__selector {
   width: 100%;
 }
+
 .app__hint {
-  color: #9ca3af;
+  color: var(--color-text-subtle);
   font-size: 14px;
   margin: 0;
   padding-top: 8px;
 }
+
 .btn {
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   border: none;
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
-  transition: background 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.05s ease;
 }
+
 .btn--danger {
-  background: #fee2e2;
+  background-color: var(--color-danger-soft);
   color: #dc2626;
 }
+
 .btn--danger:hover {
-  background: #fecaca;
+  background-color: var(--color-danger-soft-hover);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.16);
+  transform: translateY(-1px);
 }
