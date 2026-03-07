@@ -1,59 +1,48 @@
-# BoxSelectorRxjs
+# Box Selector (RxJS)
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.1.
+Angular app: 10 boxes, each can hold one selected option. Option selector appears when a box is active; selecting an option persists it and auto-advances to the next box. State is persisted in `localStorage` and restored on refresh.
 
-## Development server
+## Assignment alignment
 
-To start a local development server, run:
+- **State in services** — `BoxState` (selections, options, persistence), `SelectionUi` (active box).
+- **Observables** — All state exposed as streams; components use `AsyncPipe` and derived observables.
+- **Events as observables** — Box clicks → `boxClick$`; option clicks → `optionSelected$`. Services subscribe to these streams and react (toggle active box, persist, advance).
+- **Minimal inputs/outputs** — Children receive only ids (`boxId`, `optionId`); they read state from services. No `@Output`; clicks go to services.
+- **Component split** — App → BoxList → Box; App → OptionSelector → OptionItem (each in its own component).
+- **Angular** — Latest (21.x), standalone, `@if`/`@for`, `[class]`/`[style]`, OnPush, zoneless.
 
-```bash
-ng serve
+## Architecture
+
+```
+App (shell)
+├── BoxList          → reads boxIds from BoxState, renders <app-box [boxId]>
+│   └── Box          → reads selection + active from services, clicks → SelectionUi.onBoxClick
+├── OptionSelector   → visible when activeBoxId !== null, reads options from BoxState
+│   └── OptionItem   → [optionId], reads isSelected from services, clicks → BoxState.onOptionSelected
+└── Clear button     → BoxState.clearAll() + SelectionUi.clearActiveBox()
+
+Event flow:
+  box click     → boxClick$        → SelectionUi (toggle active box)
+  option click  → optionSelected$  → BoxState (persist) + SelectionUi (advance to next box)
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Run
 
 ```bash
-ng generate component component-name
+npm install
+npm start
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Open the URL shown (e.g. `http://localhost:4201`).
+
+## Build & test
 
 ```bash
-ng generate --help
+npm run build
+npm test
 ```
 
-## Building
+## Tech
 
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- Angular 21 (standalone, zoneless, OnPush)
+- RxJS 7 (BehaviorSubject, Subject, async pipe, combineLatest, map, tap)

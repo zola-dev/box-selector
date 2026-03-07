@@ -1,9 +1,14 @@
 import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { Observable, combineLatest, map } from 'rxjs';
+import { type OptionId } from '../../models/options.model';
 import { BoxState } from '../../services/box-state';
 import { SelectionUi } from '../../services/selection-ui';
 
+/**
+ * Single option in the selector. Input: optionId; selection state from BoxState + SelectionUi.
+ * Click emits via BoxState.onOptionSelected (no @Output).
+ */
 @Component({
   selector: 'app-option-item',
   standalone: true,
@@ -13,7 +18,7 @@ import { SelectionUi } from '../../services/selection-ui';
   styleUrls: ['./option-item.css'],
 })
 export class OptionItem implements OnInit {
-  @Input({ required: true }) optionId!: string;
+  @Input({ required: true }) optionId!: OptionId;
 
   private readonly boxStateService = inject(BoxState);
   private readonly selectionUiService = inject(SelectionUi);
@@ -44,7 +49,6 @@ export class OptionItem implements OnInit {
   onOptionClick(): void {
     const activeBoxId = this.selectionUiService.getActiveBoxIdSnapshot();
     if (activeBoxId === null) return;
-    this.boxStateService.setSelection(activeBoxId, this.optionId);
-    this.selectionUiService.advanceToNextBox(activeBoxId);
+    this.boxStateService.onOptionSelected(activeBoxId, this.optionId);
   }
 }

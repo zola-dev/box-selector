@@ -3,10 +3,7 @@ import { Box } from '../box/box';
 import { BoxState } from '../../services/box-state';
 
 /**
- * BoxListComponent
- *
- * Renders the grid of boxes. Knows nothing about selections —
- * it only provides each BoxComponent with its id.
+ * Renders the grid of boxes. Provides each Box with its id; state comes from BoxState.
  */
 @Component({
   selector: 'app-box-list',

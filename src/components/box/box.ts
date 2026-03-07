@@ -3,7 +3,7 @@ import { AsyncPipe } from '@angular/common';
 import { Observable, combineLatest, map } from 'rxjs';
 import { BoxState } from '../../services/box-state';
 import { SelectionUi } from '../../services/selection-ui';
-import { Option } from '../../models/options.model';
+import { type BoxId, Option } from '../../models/options.model';
 
 interface BoxViewModel {
   selectedOption: Option | null;
@@ -11,13 +11,8 @@ interface BoxViewModel {
 }
 
 /**
- * BoxComponent
- *
- * Represents a single selectable box in the grid.
- *
- * Receives only its `boxId` as input — all state is derived
- * from services using that id. No outputs are emitted; clicks
- * are forwarded directly to SelectionUiService.
+ * Single selectable box in the grid. Input: boxId only; state derived from BoxState and SelectionUi.
+ * Clicks go to SelectionUi.onBoxClick (no @Output).
  */
 @Component({
   selector: 'app-box',
@@ -28,7 +23,7 @@ interface BoxViewModel {
   styleUrls: ['./box.css'],
 })
 export class Box implements OnInit {
-  @Input({ required: true }) boxId!: number;
+  @Input({ required: true }) boxId!: BoxId;
   private readonly boxStateService = inject(BoxState);
   private readonly selectionUiService = inject(SelectionUi);
   vm$!: Observable<BoxViewModel>;

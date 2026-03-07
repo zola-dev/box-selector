@@ -1,18 +1,15 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { AsyncPipe, DecimalPipe } from '@angular/common';
+import { map } from 'rxjs';
 import { BoxList } from './components/box-list/box-list';
 import { OptionSelector } from './components/option-selector/option-selector';
 import { BoxState } from './services/box-state';
 import { SelectionUi } from './services/selection-ui';
-import { map } from 'rxjs/operators';
 
-/**
- * AppComponent
- *
- * Shell component — thin orchestration layer.
- * Contains the box grid, the option selector panel, and the clear button.
- * All logic lives in services.
- */
+  /**
+   * Root shell: box grid, option selector panel, and clear button.
+   * All state and logic live in services; this component only wires template to observables.
+   */
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -22,17 +19,17 @@ import { map } from 'rxjs/operators';
   styleUrl: './app.css',
 })
 export class App {
-  private readonly boxStateService = inject(BoxState);
-  private readonly selectionUiService = inject(SelectionUi);
-  readonly totalScore$ = this.boxStateService.totalScore$;
+  private readonly boxState = inject(BoxState);
+  private readonly selectionUi = inject(SelectionUi);
 
-  // Drive @if in the template — null means no active box (falsy), a number means active (truthy)
-  // readonly hasActiveBox$ = this.selectionUiService.activeBoxId$;
-  readonly hasActiveBox$ = this.selectionUiService.activeBoxId$.pipe(
-    map((id) => id !== null) // 0 becomes true, null becomes false
-  );
+  readonly totalScore$ = this.boxState.totalScore$;
+
+  /** Drives @if for option selector visibility (true when a box is active). */
+  readonly hasActiveBox$ = this.selectionUi.activeBoxId$.pipe(map((id) => id !== null));
+
+  /** Clears all box selections (BoxState) and closes the option selector (SelectionUi). */
   onClearAll(): void {
-    this.boxStateService.clearAll();
-    this.selectionUiService.clearActiveBox();
+    this.boxState.clearAll();
+    this.selectionUi.clearActiveBox();
   }
 }

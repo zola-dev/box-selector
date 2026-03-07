@@ -1,9 +1,26 @@
+/** 0-based index of a box in the grid (0..BOX_COUNT-1). */
+export type BoxId = number;
+
+/** Id of an option (e.g. 'opt-1'). Used as value in selections map. */
+export type OptionId = string;
+
+/** Map from box id to selected option id (or null). Persisted to localStorage. */
+export type SelectionsMap = Record<BoxId, OptionId | null>;
+
+/** A single selectable option (label, value, and score for aggregation). */
 export interface Option {
-  id: string;
+  id: OptionId;
   label: string;
   value: string;
   score: number;
 }
+
+/** Payload emitted on optionSelected$ when the user picks an option for a box. */
+export interface OptionSelectionEvent {
+  boxId: BoxId;
+  optionId: OptionId;
+}
+
 export const OPTIONS: Option[] = [
   { id: 'opt-1',  label: 'Alpha',   value: 'alpha',   score: 1.1 },
   { id: 'opt-2',  label: 'Beta',    value: 'beta',    score: 1.3 },
@@ -26,8 +43,9 @@ export const OPTIONS: Option[] = [
   { id: 'opt-19', label: 'Tau',     value: 'tau',     score: 4.7 },
   { id: 'opt-20', label: 'Upsilon', value: 'upsilon', score: 4.9 },
 ];
-// Total number of boxes in the grid
+
+/** Number of boxes in the grid (0-based ids: 0..BOX_COUNT-1). */
 export const BOX_COUNT = 10;
 
-// localStorage key for persisting state
+/** localStorage key for persisting box → option selections. */
 export const STORAGE_KEY = 'box-selector-state';

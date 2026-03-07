@@ -1,11 +1,18 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, map } from 'rxjs';
-import { BOX_COUNT, OPTIONS, Option, STORAGE_KEY } from '../models/options.model';
+import { BehaviorSubject, Observable, Subject, map, tap } from 'rxjs';
+import {
+  BOX_COUNT,
+  OPTIONS,
+  Option,
+  OptionSelectionEvent,
+  type BoxId,
+  type OptionId,
+  type SelectionsMap,
+  STORAGE_KEY,
+} from '../models/options.model';
 
 /**
- * BoxStateService
- *
- * Single source of truth for:
+ * BoxState — single source of truth for:
  *  - Which option is selected per box (persisted to localStorage)
  *  - The full list of available options
  *
@@ -14,55 +21,72 @@ import { BOX_COUNT, OPTIONS, Option, STORAGE_KEY } from '../models/options.model
  */
 @Injectable({ providedIn: 'root' })
 export class BoxState {
-  // Map of boxId (0-based index) → selected optionId or null
-  private readonly selectionsSubject = new BehaviorSubject<Record<number, string | null>>(
-    this.loadFromStorage(),
-  );
+  private readonly selectionsSubject = new BehaviorSubject<SelectionsMap>(this.loadFromStorage());
 
-  // Public stream — components subscribe to this
-  readonly selections$: Observable<Record<number, string | null>> =
-    this.selectionsSubject.asObservable();
+  readonly selections$: Observable<SelectionsMap> = this.selectionsSubject.asObservable();
 
   // The static list of all available options
   readonly options: Option[] = OPTIONS;
 
-  // Derived: box ids array (0..BOX_COUNT-1) for iteration in templates
-  readonly boxIds: number[] = Array.from({ length: BOX_COUNT }, (_, i) => i);
+  /** Box ids 0..BOX_COUNT-1 for iteration in templates. */
+  readonly boxIds: readonly BoxId[] = Array.from({ length: BOX_COUNT }, (_, i) => i) as BoxId[];
+  /**
+   * Stream of option selections. OptionItem emits here; this service persists,
+   * and SelectionUi subscribes to auto-advance the active box.
+   */
+  private readonly optionSelectedSubject = new Subject<OptionSelectionEvent>();
+  readonly optionSelected$: Observable<OptionSelectionEvent> =
+    this.optionSelectedSubject.asObservable();
+
+  constructor() {
+    // providedIn: 'root' → singleton for app lifetime; this subscription needs no teardown.
+    this.optionSelected$
+      .pipe(
+        tap(({ boxId, optionId }) => {
+          const updated = { ...this.selectionsSubject.getValue(), [boxId]: optionId };
+          this.selectionsSubject.next(updated);
+          this.saveToStorage(updated);
+        }),
+      )
+      .subscribe();
+  }
 
   /**
-   * Returns an observable of the selected optionId for a specific box.
-   * Components use this with their own boxId to get only what they need.
+   * Called by OptionItem when an option is clicked.
+   * Emits to optionSelected$; constructor subscription persists, SelectionUi advances.
+   * @param boxId — 0-based box index
+   * @param optionId — id of the selected option
    */
-  getSelectionForBox$(boxId: number): Observable<string | null> {
+  onOptionSelected(boxId: BoxId, optionId: OptionId): void {
+    this.optionSelectedSubject.next({ boxId, optionId } satisfies OptionSelectionEvent);
+  }
+
+  /**
+   * Observable of the selected option id for a specific box, or null if none.
+   * @param boxId — 0-based box index
+   * @returns Observable<OptionId | null>
+   */
+  getSelectionForBox$(boxId: BoxId): Observable<OptionId | null> {
     return this.selections$.pipe(map((selections) => selections[boxId] ?? null));
   }
 
   /**
-   * Returns an observable of the full Option object selected for a box,
-   * or null if nothing is selected.
+   * Observable of the full Option for a box, or null if none selected.
+   * @param boxId — 0-based box index
+   * @returns Observable<Option | null>
    */
-  getSelectedOption$(boxId: number): Observable<Option | null> {
+  getSelectedOption$(boxId: BoxId): Observable<Option | null> {
     return this.getSelectionForBox$(boxId).pipe(
       map((optionId) => (optionId ? (this.options.find((o) => o.id === optionId) ?? null) : null)),
     );
   }
 
   /**
-   * Set the selected option for a given box.
-   * Persists the new state to localStorage after every change.
-   */
-  setSelection(boxId: number, optionId: string): void {
-    const current = this.selectionsSubject.getValue();
-    const updated = { ...current, [boxId]: optionId };
-    this.selectionsSubject.next(updated);
-    this.saveToStorage(updated);
-  }
-
-  /**
-   * Clear all selections across all boxes.
+   * Clears all box selections and persists empty state to localStorage.
+   * @returns void
    */
   clearAll(): void {
-    const empty: Record<number, string | null> = {};
+    const empty: SelectionsMap = {};
     this.selectionsSubject.next(empty);
     this.saveToStorage(empty);
   }
@@ -71,7 +95,7 @@ export class BoxState {
   // Private helpers — localStorage persistence
   // ---------------------------------------------------------------------------
 
-  private loadFromStorage(): Record<number, string | null> {
+  private loadFromStorage(): SelectionsMap {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       return raw ? JSON.parse(raw) : {};
@@ -81,7 +105,7 @@ export class BoxState {
     }
   }
 
-  private saveToStorage(state: Record<number, string | null>): void {
+  private saveToStorage(state: SelectionsMap): void {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch {
@@ -89,6 +113,7 @@ export class BoxState {
     }
   }
 
+  /** Sum of scores of all currently selected options (derived from selections$). */
   readonly totalScore$: Observable<number> = this.selections$.pipe(
     map((selections) => {
       return Object.values(selections)
