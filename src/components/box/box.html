@@ -12,5 +12,6 @@
   <span class="box__number">{{ slotId() + 1 }}</span>
   @if (selectedOption()) {
     <span class="box__label">{{ selectedOption()!.label }}</span>
+    <span class="box__score">{{ selectedOption()!.score }} mg</span>
   }
 </div>
