@@ -15,7 +15,7 @@ export interface CoffeeOption {
   score: number; // caffeine in mg
 }
 
-/** Payload emitted on coffeeSelected$ when the user picks a coffee for a slot. */
+/** Payload passed to BoxState.onOptionSelected when the user picks a coffee for a slot. */
 export interface CoffeeSelectionEvent {
   slotId: SlotId;
   coffeeId: CoffeeId;

@@ -11,7 +11,7 @@ import { OptionItem } from '../option-item/option-item';
  * Reads the active slot from SelectionUi signal store
  * and the option list from BoxState signal store.
  *
- * Visibility is controlled by the parent (App) via hasActiveBox computed signal.
+ * Visibility is controlled by the parent (App) via selectionUi.hasActiveSlot().
  * Signals are read directly in the template.
  */
 @Component({

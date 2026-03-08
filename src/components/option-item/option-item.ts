@@ -28,20 +28,23 @@ export class OptionItem {
   private readonly selectionUi = inject(SelectionUi);
 
   /**
-   * The label of this coffee option.
-   * Resolved once from static options list — never changes at runtime.
+   * The CoffeeOption resolved from the static list for this coffeeId, or null if not found.
    */
-  readonly label = computed(
-    () => this.boxState.options().find((o) => o.id === this.coffeeId())?.label ?? '',
+  readonly option = computed(
+    () => this.boxState.options().find((o) => o.id === this.coffeeId()) ?? null,
   );
 
   /**
-   * The descriptive value of this coffee option (e.g. 'pure shot', 'silky milk').
-   * Resolved once from static options list — never changes at runtime.
+   * The display label of this coffee option (e.g. 'Espresso', 'Cold Brew').
+   * Derived from the option computed signal.
    */
-  readonly value = computed(
-    () => this.boxState.options().find((o) => o.id === this.coffeeId())?.value ?? '',
-  );
+  readonly label = computed(() => this.option()?.label ?? '');
+
+  /**
+   * The descriptive value of this coffee option (e.g. 'pure shot', 'silky milk').
+   * Derived from the option computed signal.
+   */
+  readonly value = computed(() => this.option()?.value ?? '');
 
   /**
    * Whether this option is currently selected for the active slot.
