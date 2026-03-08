@@ -36,12 +36,12 @@ export class SelectionUi {
       .pipe(map((slotId) => (this.activeBoxIdSubject.getValue() === slotId ? null : slotId)))
       .subscribe((next) => this.activeBoxIdSubject.next(next));
 
-    // React to option selections — auto-advance to next box (or close if last box)
+    // React to option selections — auto-advance to next box (or stay on the same box if last box)
     this.boxState.optionSelected$
       .pipe(
         map(({ slotId }) => {
           const nextId = slotId + 1;
-          return nextId < SLOT_COUNT? nextId : null;
+          return nextId < SLOT_COUNT? nextId : slotId;
         }),
       )
       .subscribe((next) => this.activeBoxIdSubject.next(next));
