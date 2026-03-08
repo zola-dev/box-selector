@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { map } from 'rxjs';
-import { type OptionId } from '../../models/options.model';
+import { type CoffeeId } from '../../models/options.model';
 import { BoxState } from '../../services/box-state';
 import { SelectionUi } from '../../services/selection-ui';
 import { OptionItem } from '../option-item/option-item';
@@ -25,6 +25,6 @@ export class OptionSelector {
   readonly activeBoxLabel$ = this.selectionUiService.activeBoxId$.pipe(
     map((id) => (id !== null ? id + 1 : null)),
   );
-  /** Option ids passed to each OptionItem (from BoxState.options). */
-  readonly optionIds: readonly OptionId[] = this.boxStateService.options.map((o) => o.id);
+  /** CoffeeOption ids passed to each OptionItem (from BoxState.options). */
+  readonly optionIds: readonly CoffeeId[] = this.boxStateService.options.map((o) => o.id);
 }

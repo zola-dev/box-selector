@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { BehaviorSubject, map, Observable, Subject } from 'rxjs';
-import { BOX_COUNT, type BoxId } from '../models/options.model';
+import { SLOT_COUNT, type SlotId } from '../models/options.model';
 import { BoxState } from './box-state';
 
 /**
@@ -20,28 +20,28 @@ import { BoxState } from './box-state';
 export class SelectionUi {
   private readonly boxState = inject(BoxState);
 
-  private readonly activeBoxIdSubject = new BehaviorSubject<BoxId | null>(null);
+  private readonly activeBoxIdSubject = new BehaviorSubject<SlotId | null>(null);
 
-  readonly activeBoxId$: Observable<BoxId | null> = this.activeBoxIdSubject.asObservable();
+  readonly activeBoxId$: Observable<SlotId | null> = this.activeBoxIdSubject.asObservable();
 
   /**
    * Stream of box-click events. Box emits here; constructor subscription toggles active box.
    */
-  private readonly boxClickSubject = new Subject<BoxId>();
-  readonly boxClick$: Observable<BoxId> = this.boxClickSubject.asObservable();
+  private readonly boxClickSubject = new Subject<SlotId>();
+  readonly boxClick$: Observable<SlotId> = this.boxClickSubject.asObservable();
 
   constructor() {
     // React to box clicks as a stream — toggle active box (or close if same box)
     this.boxClick$
-      .pipe(map((boxId) => (this.activeBoxIdSubject.getValue() === boxId ? null : boxId)))
+      .pipe(map((slotId) => (this.activeBoxIdSubject.getValue() === slotId ? null : slotId)))
       .subscribe((next) => this.activeBoxIdSubject.next(next));
 
     // React to option selections — auto-advance to next box (or close if last box)
     this.boxState.optionSelected$
       .pipe(
-        map(({ boxId }) => {
-          const nextId = boxId + 1;
-          return nextId < BOX_COUNT ? nextId : null;
+        map(({ slotId }) => {
+          const nextId = slotId + 1;
+          return nextId < SLOT_COUNT? nextId : null;
         }),
       )
       .subscribe((next) => this.activeBoxIdSubject.next(next));
@@ -49,18 +49,18 @@ export class SelectionUi {
 
   /**
    * Called by Box when a box is clicked. Pushes into boxClick$; constructor handles toggle.
-   * @param boxId — 0-based box index
+   * @param slotId — 0-based box index
    * @returns void
    */
-  onBoxClick(boxId: BoxId): void {
-    this.boxClickSubject.next(boxId);
+  onBoxClick(slotId: SlotId): void {
+    this.boxClickSubject.next(slotId);
   }
 
   /**
    * Synchronous snapshot of the current active box id. Use only in event handlers, not in pipelines.
    * @returns BoxId of active box, or null if none
    */
-  getActiveBoxIdSnapshot(): BoxId | null {
+  getActiveBoxIdSnapshot(): SlotId | null {
     return this.activeBoxIdSubject.getValue();
   }
 

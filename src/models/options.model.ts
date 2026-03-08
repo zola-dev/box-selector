@@ -1,51 +1,51 @@
-/** 0-based index of a box in the grid (0..BOX_COUNT-1). */
-export type BoxId = number;
+/** 0-based index of a coffee slot in the order (0..SLOT_COUNT-1). */
+export type SlotId = number;
 
-/** Id of an option (e.g. 'opt-1'). Used as value in selections map. */
-export type OptionId = string;
+/** Id of a coffee option (e.g. 'coffee-1'). */
+export type CoffeeId = string;
 
-/** Map from box id to selected option id (or null). Persisted to localStorage. */
-export type SelectionsMap = Record<BoxId, OptionId | null>;
+/** Map from slot id to selected coffee id (or null). Persisted to localStorage. */
+export type OrderMap = Record<SlotId, CoffeeId | null>;
 
-/** A single selectable option (label, value, and score for aggregation). */
-export interface Option {
-  id: OptionId;
+/** A single coffee option with caffeine level as score. */
+export interface CoffeeOption {
+  id: CoffeeId;
   label: string;
   value: string;
-  score: number;
+  score: number; // caffeine in mg
 }
 
-/** Payload emitted on optionSelected$ when the user picks an option for a box. */
-export interface OptionSelectionEvent {
-  boxId: BoxId;
-  optionId: OptionId;
+/** Payload emitted on coffeeSelected$ when the user picks a coffee for a slot. */
+export interface CoffeeSelectionEvent {
+  slotId: SlotId;
+  coffeeId: CoffeeId;
 }
 
-export const OPTIONS: Option[] = [
-  { id: 'opt-1',  label: 'Alpha',   value: 'alpha',   score: 1.1 },
-  { id: 'opt-2',  label: 'Beta',    value: 'beta',    score: 1.3 },
-  { id: 'opt-3',  label: 'Gamma',   value: 'gamma',   score: 1.5 },
-  { id: 'opt-4',  label: 'Delta',   value: 'delta',   score: 1.7 },
-  { id: 'opt-5',  label: 'Epsilon', value: 'epsilon', score: 1.9 },
-  { id: 'opt-6',  label: 'Zeta',    value: 'zeta',    score: 2.1 },
-  { id: 'opt-7',  label: 'Eta',     value: 'eta',     score: 2.3 },
-  { id: 'opt-8',  label: 'Theta',   value: 'theta',   score: 2.5 },
-  { id: 'opt-9',  label: 'Iota',    value: 'iota',    score: 2.7 },
-  { id: 'opt-10', label: 'Kappa',   value: 'kappa',   score: 2.9 },
-  { id: 'opt-11', label: 'Lambda',  value: 'lambda',  score: 3.1 },
-  { id: 'opt-12', label: 'Mu',      value: 'mu',      score: 3.3 },
-  { id: 'opt-13', label: 'Nu',      value: 'nu',      score: 3.5 },
-  { id: 'opt-14', label: 'Xi',      value: 'xi',      score: 3.7 },
-  { id: 'opt-15', label: 'Omicron', value: 'omicron', score: 3.9 },
-  { id: 'opt-16', label: 'Pi',      value: 'pi',      score: 4.1 },
-  { id: 'opt-17', label: 'Rho',     value: 'rho',     score: 4.3 },
-  { id: 'opt-18', label: 'Sigma',   value: 'sigma',   score: 4.5 },
-  { id: 'opt-19', label: 'Tau',     value: 'tau',     score: 4.7 },
-  { id: 'opt-20', label: 'Upsilon', value: 'upsilon', score: 4.9 },
+export const COFFEE_OPTIONS: CoffeeOption[] = [
+  { id: 'coffee-1',  label: 'Espresso',       value: 'pure shot',     score: 63  },
+  { id: 'coffee-2',  label: 'Double Espresso', value: 'double shot',  score: 126 },
+  { id: 'coffee-3',  label: 'Americano',       value: 'long black',   score: 75  },
+  { id: 'coffee-4',  label: 'Cappuccino',      value: 'foamy milk',   score: 63  },
+  { id: 'coffee-5',  label: 'Flat White',      value: 'silky milk',   score: 130 },
+  { id: 'coffee-6',  label: 'Latte',           value: 'milky',        score: 75  },
+  { id: 'coffee-7',  label: 'Macchiato',       value: 'marked',       score: 85  },
+  { id: 'coffee-8',  label: 'Mocha',           value: 'chocolatey',   score: 95  },
+  { id: 'coffee-9',  label: 'Cold Brew',       value: 'ice cold',     score: 200 },
+  { id: 'coffee-10', label: 'Iced Latte',      value: 'cold milky',   score: 75  },
+  { id: 'coffee-11', label: 'Cortado',         value: 'half & half',  score: 63  },
+  { id: 'coffee-12', label: 'Ristretto',       value: 'short shot',   score: 55  },
+  { id: 'coffee-13', label: 'Lungo',           value: 'long shot',    score: 80  },
+  { id: 'coffee-14', label: 'Affogato',        value: 'with gelato',  score: 63  },
+  { id: 'coffee-15', label: 'Vienna Coffee',   value: 'with cream',   score: 90  },
+  { id: 'coffee-16', label: 'Irish Coffee',    value: 'with whiskey', score: 63  },
+  { id: 'coffee-17', label: 'Frappuccino',     value: 'blended ice',  score: 95  },
+  { id: 'coffee-18', label: 'Turkish Coffee',  value: 'unfiltered',   score: 50  },
+  { id: 'coffee-19', label: 'Decaf',           value: 'no caffeine',  score: 5   },
+  { id: 'coffee-20', label: 'Matcha Latte',    value: 'green tea',    score: 70  },
 ];
 
-/** Number of boxes in the grid (0-based ids: 0..BOX_COUNT-1). */
-export const BOX_COUNT = 10;
+/** Number of team members ordering coffee (slots 0..SLOT_COUNT-1). */
+export const SLOT_COUNT = 10;
 
-/** localStorage key for persisting box → option selections. */
-export const STORAGE_KEY = 'box-selector-state';
+/** localStorage key for persisting the team coffee order. */
+export const STORAGE_KEY = 'team-coffee-order';

@@ -1,14 +1,14 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, Subject, map, tap } from 'rxjs';
 import {
-  BOX_COUNT,
-  OPTIONS,
-  Option,
-  OptionSelectionEvent,
-  type BoxId,
-  type OptionId,
-  type SelectionsMap,
+  SLOT_COUNT,
+  COFFEE_OPTIONS,
+  CoffeeOption,
+  CoffeeSelectionEvent,
+  type SlotId,
+  type CoffeeId,
   STORAGE_KEY,
+  OrderMap,
 } from '../models/options.model';
 
 /**
@@ -21,29 +21,29 @@ import {
  */
 @Injectable({ providedIn: 'root' })
 export class BoxState {
-  private readonly selectionsSubject = new BehaviorSubject<SelectionsMap>(this.loadFromStorage());
+  private readonly selectionsSubject = new BehaviorSubject<OrderMap>(this.loadFromStorage());
 
-  readonly selections$: Observable<SelectionsMap> = this.selectionsSubject.asObservable();
+  readonly selections$: Observable<OrderMap> = this.selectionsSubject.asObservable();
 
   // The static list of all available options
-  readonly options: Option[] = OPTIONS;
+  readonly options: CoffeeOption[] = COFFEE_OPTIONS;
 
   /** Box ids 0..BOX_COUNT-1 for iteration in templates. */
-  readonly boxIds: readonly BoxId[] = Array.from({ length: BOX_COUNT }, (_, i) => i) as BoxId[];
+  readonly boxIds: readonly SlotId[] = Array.from({ length: SLOT_COUNT}, (_, i) => i) as SlotId[];
   /**
    * Stream of option selections. OptionItem emits here; this service persists,
    * and SelectionUi subscribes to auto-advance the active box.
    */
-  private readonly optionSelectedSubject = new Subject<OptionSelectionEvent>();
-  readonly optionSelected$: Observable<OptionSelectionEvent> =
+  private readonly optionSelectedSubject = new Subject<CoffeeSelectionEvent>();
+  readonly optionSelected$: Observable<CoffeeSelectionEvent> =
     this.optionSelectedSubject.asObservable();
 
   constructor() {
     // providedIn: 'root' → singleton for app lifetime; this subscription needs no teardown.
     this.optionSelected$
       .pipe(
-        tap(({ boxId, optionId }) => {
-          const updated = { ...this.selectionsSubject.getValue(), [boxId]: optionId };
+        tap(({ slotId, coffeeId }) => {
+          const updated = { ...this.selectionsSubject.getValue(), [slotId]: coffeeId };
           this.selectionsSubject.next(updated);
           this.saveToStorage(updated);
         }),
@@ -54,30 +54,30 @@ export class BoxState {
   /**
    * Called by OptionItem when an option is clicked.
    * Emits to optionSelected$; constructor subscription persists, SelectionUi advances.
-   * @param boxId — 0-based box index
-   * @param optionId — id of the selected option
+   * @param slotId — 0-based box index
+   * @param coffeeId — id of the selected option
    */
-  onOptionSelected(boxId: BoxId, optionId: OptionId): void {
-    this.optionSelectedSubject.next({ boxId, optionId } satisfies OptionSelectionEvent);
+  onOptionSelected(slotId: SlotId, coffeeId: CoffeeId): void {
+    this.optionSelectedSubject.next({ slotId, coffeeId } satisfies CoffeeSelectionEvent);
   }
 
   /**
    * Observable of the selected option id for a specific box, or null if none.
-   * @param boxId — 0-based box index
+   * @param slotId — 0-based box index
    * @returns Observable<OptionId | null>
    */
-  getSelectionForBox$(boxId: BoxId): Observable<OptionId | null> {
-    return this.selections$.pipe(map((selections) => selections[boxId] ?? null));
+  getSelectionForBox$(slotId: SlotId): Observable<CoffeeId | null> {
+    return this.selections$.pipe(map((selections) => selections[slotId] ?? null));
   }
 
   /**
-   * Observable of the full Option for a box, or null if none selected.
-   * @param boxId — 0-based box index
-   * @returns Observable<Option | null>
+   * Observable of the full CoffeeOption for a box, or null if none selected.
+   * @param slotId — 0-based box index
+   * @returns Observable<CoffeeOption | null>
    */
-  getSelectedOption$(boxId: BoxId): Observable<Option | null> {
-    return this.getSelectionForBox$(boxId).pipe(
-      map((optionId) => (optionId ? (this.options.find((o) => o.id === optionId) ?? null) : null)),
+  getSelectedOption$(slotId: SlotId): Observable<CoffeeOption | null> {
+    return this.getSelectionForBox$(slotId).pipe(
+      map((coffeeId) => (coffeeId ? (this.options.find((o) => o.id === coffeeId) ?? null) : null)),
     );
   }
 
@@ -86,7 +86,7 @@ export class BoxState {
    * @returns void
    */
   clearAll(): void {
-    const empty: SelectionsMap = {};
+    const empty: OrderMap = {};
     this.selectionsSubject.next(empty);
     this.saveToStorage(empty);
   }
@@ -95,7 +95,7 @@ export class BoxState {
   // Private helpers — localStorage persistence
   // ---------------------------------------------------------------------------
 
-  private loadFromStorage(): SelectionsMap {
+  private loadFromStorage(): OrderMap {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       return raw ? JSON.parse(raw) : {};
@@ -105,11 +105,11 @@ export class BoxState {
     }
   }
 
-  private saveToStorage(state: SelectionsMap): void {
+  private saveToStorage(state: OrderMap): void {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch {
-      // Silently ignore storage errors (e.g. private browsing quota)
+      // Silently ignore storage errors
     }
   }
 
@@ -117,9 +117,9 @@ export class BoxState {
   readonly totalScore$: Observable<number> = this.selections$.pipe(
     map((selections) => {
       return Object.values(selections)
-        .filter((optionId): optionId is string => optionId !== null)
-        .reduce((sum, optionId) => {
-          const option = this.options.find((o) => o.id === optionId);
+        .filter((coffeeId): coffeeId is string => coffeeId !== null)
+        .reduce((sum, coffeeId) => {
+          const option = this.options.find((o) => o.id === coffeeId);
           return sum + (option?.score ?? 0);
         }, 0);
     }),

@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { Observable, combineLatest, map } from 'rxjs';
-import { type OptionId } from '../../models/options.model';
+import { type CoffeeId } from '../../models/options.model';
 import { BoxState } from '../../services/box-state';
 import { SelectionUi } from '../../services/selection-ui';
 
 /**
- * Single option in the selector. Input: optionId; selection state from BoxState + SelectionUi.
+ * Single option in the selector. Input: coffeeId; selection state from BoxState + SelectionUi.
  * Click emits via BoxState.onOptionSelected (no @Output).
  */
 @Component({
@@ -18,7 +18,7 @@ import { SelectionUi } from '../../services/selection-ui';
   styleUrls: ['./option-item.css'],
 })
 export class OptionItem implements OnInit {
-  @Input({ required: true }) optionId!: OptionId;
+  @Input({ required: true }) coffeeId!: CoffeeId;
 
   private readonly boxStateService = inject(BoxState);
   private readonly selectionUiService = inject(SelectionUi);
@@ -31,7 +31,7 @@ export class OptionItem implements OnInit {
   isSelected$!: Observable<boolean>;
 
   ngOnInit(): void {
-    const option = this.boxStateService.options.find((o) => o.id === this.optionId)!;
+    const option = this.boxStateService.options.find((o) => o.id === this.coffeeId)!;
     this.label = option.label;
     this.value = option.value;
 
@@ -41,7 +41,7 @@ export class OptionItem implements OnInit {
     ]).pipe(
       map(([activeBoxId, selections]) => {
         if (activeBoxId === null) return false;
-        return selections[activeBoxId] === this.optionId;
+        return selections[activeBoxId] === this.coffeeId;
       }),
     );
   }
@@ -49,6 +49,6 @@ export class OptionItem implements OnInit {
   onOptionClick(): void {
     const activeBoxId = this.selectionUiService.getActiveBoxIdSnapshot();
     if (activeBoxId === null) return;
-    this.boxStateService.onOptionSelected(activeBoxId, this.optionId);
+    this.boxStateService.onOptionSelected(activeBoxId, this.coffeeId);
   }
 }

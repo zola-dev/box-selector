@@ -3,15 +3,15 @@ import { AsyncPipe } from '@angular/common';
 import { Observable, combineLatest, map } from 'rxjs';
 import { BoxState } from '../../services/box-state';
 import { SelectionUi } from '../../services/selection-ui';
-import { type BoxId, Option } from '../../models/options.model';
+import { type SlotId, CoffeeOption } from '../../models/options.model';
 
 interface BoxViewModel {
-  selectedOption: Option | null;
+  selectedOption: CoffeeOption | null;
   isActive: boolean;
 }
 
 /**
- * Single selectable box in the grid. Input: boxId only; state derived from BoxState and SelectionUi.
+ * Single selectable box in the grid. Input: slotId only; state derived from BoxState and SelectionUi.
  * Clicks go to SelectionUi.onBoxClick (no @Output).
  */
 @Component({
@@ -23,16 +23,16 @@ interface BoxViewModel {
   styleUrls: ['./box.css'],
 })
 export class Box implements OnInit {
-  @Input({ required: true }) boxId!: BoxId;
+  @Input({ required: true }) slotId!: SlotId;
   private readonly boxStateService = inject(BoxState);
   private readonly selectionUiService = inject(SelectionUi);
   vm$!: Observable<BoxViewModel>;
 
   ngOnInit(): void {
     this.vm$ = combineLatest({
-      selectedOption: this.boxStateService.getSelectedOption$(this.boxId),
+      selectedOption: this.boxStateService.getSelectedOption$(this.slotId),
       isActive: this.selectionUiService.activeBoxId$.pipe(
-        map((activeId) => activeId === this.boxId),
+        map((activeId) => activeId === this.slotId),
       ),
     });
   }
@@ -42,6 +42,6 @@ export class Box implements OnInit {
    * The service manages the active-box toggle logic.
    */
   onBoxClick(): void {
-    this.selectionUiService.onBoxClick(this.boxId);
+    this.selectionUiService.onBoxClick(this.slotId);
   }
 }

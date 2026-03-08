@@ -15,7 +15,5 @@ import { BoxState } from '../../services/box-state';
 })
 export class BoxList {
   private readonly boxStateService = inject(BoxState);
-
-  // Pulled from service so this component stays thin
   readonly boxIds = this.boxStateService.boxIds;
 }

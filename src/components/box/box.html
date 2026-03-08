@@ -6,9 +6,9 @@
     (click)="onBoxClick()"
     role="button"
     [attr.aria-pressed]="vm.isActive"
-    [attr.aria-label]="'Box ' + (boxId + 1) + (vm.selectedOption ? ': ' + vm.selectedOption.label : '')"
+    [attr.aria-label]="'Box ' + (slotId + 1) + (vm.selectedOption ? ': ' + vm.selectedOption.label : '')"
   >
-    <span class="box__number">{{ boxId + 1 }}</span>
+    <span class="box__number">{{ slotId + 1 }}</span>
     @if (vm.selectedOption) {
       <span class="box__label">{{ vm.selectedOption.label }}</span>
     }
