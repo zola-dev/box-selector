@@ -1,33 +1,32 @@
-# Box Selector (RxJS)
+# Box Selector (NgRx SignalStore)
 
-Angular app: 10 boxes, each can hold one selected option. CoffeeOption selector appears when a box is active; selecting an option persists it and auto-advances to the next box. State is persisted in `localStorage` and restored on refresh.
+Angular app: 10 boxes, each can hold one selected coffee option. Option selector appears when a box is active; selecting an option persists it and auto-advances to the next box. State is persisted in `localStorage` and restored on refresh.
 
 ## Assignment alignment
 
-- **State in services** — `BoxState` (selections, options, persistence), `SelectionUi` (active box).
-- **Observables** — All state exposed as streams; components use `AsyncPipe` and derived observables.
-- **Events as observables** — Box clicks → `boxClick$`; option clicks → `optionSelected$`. Services subscribe to these streams and react (toggle active box, persist, advance).
-- **Minimal inputs/outputs** — Children receive only ids (`slotId`, `coffeeId`); they read state from services. No `@Output`; clicks go to services.
+- **State in stores** — `BoxState` (selections, options, persistence, totalScore), `SelectionUi` (active slot) — both implemented as NgRx `signalStore()`.
+- **Signals** — All state exposed as signals; components read them directly via `()` calls. No `async pipe`, no `Observable`, no `BehaviorSubject`.
+- **Signal inputs** — Child components use `input.required<T>()` instead of `@Input()` as required by the assignment.
+- **Minimal inputs/outputs** — Children receive only ids (`slotId`, `coffeeId`); they read state from stores. No `@Output`; clicks go directly to store methods.
 - **Component split** — App → BoxList → Box; App → OptionSelector → OptionItem (each in its own component).
 - **Angular** — Latest (21.x), standalone, `@if`/`@for`, `[class]`/`[style]`, OnPush, zoneless.
 
 ## Architecture
-
 ```
 App (shell)
-├── BoxList          → reads boxIds from BoxState, renders <app-box [slotId]>
-│   └── Box          → reads selection + active from services, clicks → SelectionUi.onBoxClick
-├── OptionSelector   → visible when activeBoxId !== null, reads options from BoxState
-│   └── OptionItem   → [coffeeId], reads isSelected from services, clicks → BoxState.onOptionSelected
-└── Clear button     → BoxState.clearAll() + SelectionUi.clearActiveBox()
+├── BoxList          → reads boxIds() from BoxState, renders <app-box [slotId]>
+│   └── Box          → reads selectedOption() + isActive() from stores, clicks → SelectionUi.onBoxClick
+├── OptionSelector   → visible when selectionUi.hasActiveSlot(), reads options() from BoxState
+│   └── OptionItem   → [coffeeId] signal input, reads isSelected() from stores, clicks → BoxState.onOptionSelected
+└── Clear button     → BoxState.clearAll() + SelectionUi.clearActiveSlot()
 
-Event flow:
-  box click     → boxClick$        → SelectionUi (toggle active box)
-  option click  → optionSelected$  → BoxState (persist) + SelectionUi (advance to next box)
+State flow:
+  box click    → SelectionUi.onBoxClick()     → patchState (toggle activeSlotId)
+  option click → BoxState.onOptionSelected()  → patchState (persist selection)
+               → SelectionUi.advanceToNextSlot() → patchState (advance activeSlotId)
 ```
 
 ## Run
-
 ```bash
 npm install
 npm start
@@ -35,14 +34,14 @@ npm start
 
 Open the URL shown (e.g. `http://localhost:4201`).
 
-## Build & test
-
+## Build
 ```bash
 npm run build
-npm test
 ```
 
 ## Tech
 
 - Angular 21 (standalone, zoneless, OnPush)
-- RxJS 7 (BehaviorSubject, Subject, async pipe, combineLatest, map, tap)
+- NgRx Signals (signalStore, withState, withComputed, withMethods, patchState)
+- Signal inputs (input.required)
+- Computed signals (computed)
