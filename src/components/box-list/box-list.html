@@ -1,5 +1,5 @@
 <div class="box-list">
-    @for (slotId of boxIds; track slotId) {
-      <app-box [slotId]="slotId" />
-    }
-  </div>
+  @for (slotId of boxIds(); track slotId) {
+    <app-box [slotId]="slotId" />
+  }
+</div>

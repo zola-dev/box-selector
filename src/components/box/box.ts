@@ -1,47 +1,51 @@
-import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
-import { AsyncPipe } from '@angular/common';
-import { Observable, combineLatest, map } from 'rxjs';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { BoxState } from '../../services/box-state';
 import { SelectionUi } from '../../services/selection-ui';
-import { type SlotId, CoffeeOption } from '../../models/options.model';
-
-interface BoxViewModel {
-  selectedOption: CoffeeOption | null;
-  isActive: boolean;
-}
+import { type SlotId } from '../../models/options.model';
 
 /**
- * Single selectable box in the grid. Input: slotId only; state derived from BoxState and SelectionUi.
- * Clicks go to SelectionUi.onBoxClick (no @Output).
+ * Box
+ *
+ * Single selectable slot in the coffee order grid.
+ *
+ * Receives only its `slotId` as a signal input — all state is derived
+ * from SignalStores using that id — signals are read directly in the template.
+ *
+ * Clicks are forwarded to SelectionUi.onBoxClick.
  */
 @Component({
   selector: 'app-box',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AsyncPipe],
+  imports: [],
   templateUrl: './box.html',
   styleUrls: ['./box.css'],
 })
-export class Box implements OnInit {
-  @Input({ required: true }) slotId!: SlotId;
-  private readonly boxStateService = inject(BoxState);
-  private readonly selectionUiService = inject(SelectionUi);
-  vm$!: Observable<BoxViewModel>;
+export class Box {
+  /** Signal input — replaces @Input() as required by the assignment for the signals version. */
+  readonly slotId = input.required<SlotId>();
 
-  ngOnInit(): void {
-    this.vm$ = combineLatest({
-      selectedOption: this.boxStateService.getSelectedOption$(this.slotId),
-      isActive: this.selectionUiService.activeBoxId$.pipe(
-        map((activeId) => activeId === this.slotId),
-      ),
-    });
-  }
+  private readonly boxState = inject(BoxState);
+  private readonly selectionUi = inject(SelectionUi);
 
   /**
-   * Forward click to the UI service — no @Output needed.
-   * The service manages the active-box toggle logic.
+   * The coffee option currently selected for this slot, or null if none.
+   * Recomputes automatically when selections change.
+   */
+  readonly selectedOption = computed(() => this.boxState.getSelectedOption(this.slotId()));
+
+  /**
+   * Whether this slot is currently active (showing the option selector).
+   * Recomputes automatically when activeSlotId changes.
+   */
+  readonly isActive = computed(() => this.selectionUi.activeSlotId() === this.slotId());
+
+  /**
+   * Forwards the click to SelectionUi.
+   * SelectionUi handles the toggle logic (open/close selector).
+   * @returns void
    */
   onBoxClick(): void {
-    this.selectionUiService.onBoxClick(this.slotId);
+    this.selectionUi.onBoxClick(this.slotId());
   }
 }

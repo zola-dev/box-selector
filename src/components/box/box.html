@@ -1,16 +1,16 @@
-@if (vm$ | async; as vm) {
-  <div
-    class="box clickable-card"
-    [class.box--active]="vm.isActive"
-    [class.box--selected]="vm.selectedOption !== null"
-    (click)="onBoxClick()"
-    role="button"
-    [attr.aria-pressed]="vm.isActive"
-    [attr.aria-label]="'Box ' + (slotId + 1) + (vm.selectedOption ? ': ' + vm.selectedOption.label : '')"
-  >
-    <span class="box__number">{{ slotId + 1 }}</span>
-    @if (vm.selectedOption) {
-      <span class="box__label">{{ vm.selectedOption.label }}</span>
-    }
-  </div>
-}
+<div
+  class="box clickable-card"
+  [class.box--active]="isActive()"
+  [class.box--selected]="selectedOption() !== null"
+  (click)="onBoxClick()"
+  role="button"
+  [attr.aria-pressed]="isActive()"
+  [attr.aria-label]="
+    'Box ' + (slotId() + 1) + (selectedOption() ? ': ' + selectedOption()!.label : '')
+  "
+>
+  <span class="box__number">{{ slotId() + 1 }}</span>
+  @if (selectedOption()) {
+    <span class="box__label">{{ selectedOption()!.label }}</span>
+  }
+</div>

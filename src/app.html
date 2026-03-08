@@ -1,11 +1,7 @@
 <div class="app">
   <header class="app__header">
-    <h1 class="app__title">
-      Box Selector <span class="app__subtitle">RxJS version</span>
-    </h1>
-    <div class="total-score">
-      Total score: {{ totalScore$ | async | number:'1.1-1' }}
-    </div>
+    <h1 class="app__title">Box Selector <span class="app__subtitle">Signals version</span></h1>
+    <div class="total-score">Total caffeine: {{ boxState.totalScore() | number: '1.1-1' }} mg</div>
     <button
       class="btn btn--danger"
       (click)="onClearAll()"
@@ -21,12 +17,12 @@
       <app-box-list />
     </section>
 
-    <!-- CoffeeOption selector — only visible when a box is active -->
+    <!-- Coffee option selector — only visible when a slot is active -->
     <aside class="app__selector">
-      @if (hasActiveBox$ | async) {
-      <app-option-selector />
+      @if (selectionUi.hasActiveSlot()) {
+        <app-option-selector />
       } @else {
-      <p class="app__hint">Click a box to choose an option</p>
+        <p class="app__hint">Click a box to choose a coffee</p>
       }
     </aside>
   </main>

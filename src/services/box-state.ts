@@ -1,127 +1,114 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, Subject, map, tap } from 'rxjs';
+import { computed } from '@angular/core';
+import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import {
-  SLOT_COUNT,
   COFFEE_OPTIONS,
   CoffeeOption,
   CoffeeSelectionEvent,
-  type SlotId,
   type CoffeeId,
-  STORAGE_KEY,
+  type SlotId,
   OrderMap,
+  SLOT_COUNT,
+  STORAGE_KEY,
 } from '../models/options.model';
 
 /**
- * BoxState — single source of truth for:
- *  - Which option is selected per box (persisted to localStorage)
- *  - The full list of available options
+ * BoxState — NgRx SignalStore, single source of truth for:
+ *  - Which coffee is selected per slot (persisted to localStorage)
+ *  - The full list of available coffee options
+ *  - Derived total caffeine score
  *
- * All state is exposed as observables so components can subscribe
- * reactively via the async pipe without any manual change detection.
+ * State is exposed as signals — components read them directly via signal() calls.
  */
-@Injectable({ providedIn: 'root' })
-export class BoxState {
-  private readonly selectionsSubject = new BehaviorSubject<OrderMap>(this.loadFromStorage());
+export const BoxState = signalStore(
+  { providedIn: 'root' },
 
-  readonly selections$: Observable<OrderMap> = this.selectionsSubject.asObservable();
+  withState({
+    /** Map of slotId → selected coffeeId (or null). Persisted to localStorage. */
+    selections: loadFromStorage() as OrderMap,
+  }),
 
-  // The static list of all available options
-  readonly options: CoffeeOption[] = COFFEE_OPTIONS;
+  withComputed(({ selections }) => ({
+    /** Static list of all available coffee options. */
+    options: computed(() => COFFEE_OPTIONS),
 
-  /** Box ids 0..BOX_COUNT-1 for iteration in templates. */
-  readonly boxIds: readonly SlotId[] = Array.from({ length: SLOT_COUNT}, (_, i) => i) as SlotId[];
-  /**
-   * Stream of option selections. OptionItem emits here; this service persists,
-   * and SelectionUi subscribes to auto-advance the active box.
-   */
-  private readonly optionSelectedSubject = new Subject<CoffeeSelectionEvent>();
-  readonly optionSelected$: Observable<CoffeeSelectionEvent> =
-    this.optionSelectedSubject.asObservable();
+    /** Slot ids 0..SLOT_COUNT-1 for iteration in templates. */
+    boxIds: computed(() => Array.from({ length: SLOT_COUNT }, (_, i) => i) as SlotId[]),
 
-  constructor() {
-    // providedIn: 'root' → singleton for app lifetime; this subscription needs no teardown.
-    this.optionSelected$
-      .pipe(
-        tap(({ slotId, coffeeId }) => {
-          const updated = { ...this.selectionsSubject.getValue(), [slotId]: coffeeId };
-          this.selectionsSubject.next(updated);
-          this.saveToStorage(updated);
-        }),
-      )
-      .subscribe();
-  }
-
-  /**
-   * Called by OptionItem when an option is clicked.
-   * Emits to optionSelected$; constructor subscription persists, SelectionUi advances.
-   * @param slotId — 0-based box index
-   * @param coffeeId — id of the selected option
-   */
-  onOptionSelected(slotId: SlotId, coffeeId: CoffeeId): void {
-    this.optionSelectedSubject.next({ slotId, coffeeId } satisfies CoffeeSelectionEvent);
-  }
-
-  /**
-   * Observable of the selected option id for a specific box, or null if none.
-   * @param slotId — 0-based box index
-   * @returns Observable<OptionId | null>
-   */
-  getSelectionForBox$(slotId: SlotId): Observable<CoffeeId | null> {
-    return this.selections$.pipe(map((selections) => selections[slotId] ?? null));
-  }
-
-  /**
-   * Observable of the full CoffeeOption for a box, or null if none selected.
-   * @param slotId — 0-based box index
-   * @returns Observable<CoffeeOption | null>
-   */
-  getSelectedOption$(slotId: SlotId): Observable<CoffeeOption | null> {
-    return this.getSelectionForBox$(slotId).pipe(
-      map((coffeeId) => (coffeeId ? (this.options.find((o) => o.id === coffeeId) ?? null) : null)),
-    );
-  }
-
-  /**
-   * Clears all box selections and persists empty state to localStorage.
-   * @returns void
-   */
-  clearAll(): void {
-    const empty: OrderMap = {};
-    this.selectionsSubject.next(empty);
-    this.saveToStorage(empty);
-  }
-
-  // ---------------------------------------------------------------------------
-  // Private helpers — localStorage persistence
-  // ---------------------------------------------------------------------------
-
-  private loadFromStorage(): OrderMap {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : {};
-    } catch {
-      // If storage is unavailable or corrupted, start fresh
-      return {};
-    }
-  }
-
-  private saveToStorage(state: OrderMap): void {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch {
-      // Silently ignore storage errors
-    }
-  }
-
-  /** Sum of scores of all currently selected options (derived from selections$). */
-  readonly totalScore$: Observable<number> = this.selections$.pipe(
-    map((selections) => {
-      return Object.values(selections)
-        .filter((coffeeId): coffeeId is string => coffeeId !== null)
-        .reduce((sum, coffeeId) => {
-          const option = this.options.find((o) => o.id === coffeeId);
+    /**
+     * Sum of caffeine scores of all currently selected coffees.
+     * Recomputes automatically when selections change.
+     */
+    totalScore: computed(() =>
+      Object.values(selections())
+        .filter((id): id is CoffeeId => id !== null)
+        .reduce((sum, id) => {
+          const option = COFFEE_OPTIONS.find((o) => o.id === id);
           return sum + (option?.score ?? 0);
-        }, 0);
-    }),
-  );
+        }, 0),
+    ),
+  })),
+
+  withMethods(({ selections, ...store }) => ({
+    /**
+     * Called by OptionItem when a coffee is clicked.
+     * Persists the new selection to state and localStorage.
+     * @param slotId — 0-based slot index
+     * @param coffeeId — id of the selected coffee option
+     */
+    onOptionSelected({ slotId, coffeeId }: CoffeeSelectionEvent): void {
+      const updated = { ...selections(), [slotId]: coffeeId };
+      patchState(store, { selections: updated });
+      saveToStorage(updated);
+    },
+
+    /**
+     * Returns the full CoffeeOption selected for a slot, or null if none.
+     * @param slotId — 0-based slot index
+     * @returns CoffeeOption | null
+     */
+    getSelectedOption(slotId: SlotId): CoffeeOption | null {
+      const id = selections()[slotId];
+      return id ? (COFFEE_OPTIONS.find((o) => o.id === id) ?? null) : null;
+    },
+
+    /**
+     * Returns the selected coffeeId for a slot, or null if none.
+     * @param slotId — 0-based slot index
+     * @returns CoffeeId | null
+     */
+    getSelectionForSlot(slotId: SlotId): CoffeeId | null {
+      return selections()[slotId] ?? null;
+    },
+
+    /**
+     * Clears all slot selections and persists empty state to localStorage.
+     */
+    clearAll(): void {
+      patchState(store, { selections: {} as OrderMap });
+      saveToStorage({} as OrderMap);
+    },
+  })),
+);
+
+/**
+ * Loads persisted selections from localStorage on app init.
+ * Returns empty object if storage is unavailable or corrupted.
+ */
+function loadFromStorage(): OrderMap {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Persists the current selections map to localStorage.
+ * Silently ignores errors.
+ */
+function saveToStorage(state: OrderMap): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {}
 }

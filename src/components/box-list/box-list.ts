@@ -3,7 +3,11 @@ import { Box } from '../box/box';
 import { BoxState } from '../../services/box-state';
 
 /**
- * Renders the grid of boxes. Provides each Box with its id; state comes from BoxState.
+ * BoxList
+ *
+ * Renders the grid of coffee order slots.
+ * Provides each Box with its slotId — all state comes from BoxState signal store.
+ * BoxIds is a computed signal read directly.
  */
 @Component({
   selector: 'app-box-list',
@@ -14,6 +18,11 @@ import { BoxState } from '../../services/box-state';
   styleUrls: ['./box-list.css'],
 })
 export class BoxList {
-  private readonly boxStateService = inject(BoxState);
-  readonly boxIds = this.boxStateService.boxIds;
+  private readonly boxState = inject(BoxState);
+
+  /**
+   * Slot ids 0..SLOT_COUNT-1 for iteration in the template.
+   * Read from BoxState computed signal.
+   */
+  readonly boxIds = this.boxState.boxIds;
 }

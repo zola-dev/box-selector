@@ -1,54 +1,69 @@
-import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
-import { AsyncPipe } from '@angular/common';
-import { Observable, combineLatest, map } from 'rxjs';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { type CoffeeId } from '../../models/options.model';
 import { BoxState } from '../../services/box-state';
 import { SelectionUi } from '../../services/selection-ui';
 
 /**
- * Single option in the selector. Input: coffeeId; selection state from BoxState + SelectionUi.
- * Click emits via BoxState.onOptionSelected (no @Output).
+ * OptionItem
+ *
+ * Single selectable coffee option inside OptionSelector.
+ *
+ * Receives only its `coffeeId` as a signal input — all state is derived
+ * from SignalStores using that id.
+ * Click is forwarded directly to BoxState and SelectionUi.
  */
 @Component({
   selector: 'app-option-item',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AsyncPipe],
+  imports: [],
   templateUrl: './option-item.html',
   styleUrls: ['./option-item.css'],
 })
-export class OptionItem implements OnInit {
-  @Input({ required: true }) coffeeId!: CoffeeId;
+export class OptionItem {
+  /** Signal input. */
+  readonly coffeeId = input.required<CoffeeId>();
 
-  private readonly boxStateService = inject(BoxState);
-  private readonly selectionUiService = inject(SelectionUi);
+  private readonly boxState = inject(BoxState);
+  private readonly selectionUi = inject(SelectionUi);
 
-  // Static — set once in ngOnInit, never changes
-  label = '';
-  value = '';
+  /**
+   * The label of this coffee option.
+   * Resolved once from static options list — never changes at runtime.
+   */
+  readonly label = computed(
+    () => this.boxState.options().find((o) => o.id === this.coffeeId())?.label ?? '',
+  );
 
-  // Reactive — only what actually changes needs to be an observable
-  isSelected$!: Observable<boolean>;
+  /**
+   * The descriptive value of this coffee option (e.g. 'pure shot', 'silky milk').
+   * Resolved once from static options list — never changes at runtime.
+   */
+  readonly value = computed(
+    () => this.boxState.options().find((o) => o.id === this.coffeeId())?.value ?? '',
+  );
 
-  ngOnInit(): void {
-    const option = this.boxStateService.options.find((o) => o.id === this.coffeeId)!;
-    this.label = option.label;
-    this.value = option.value;
+  /**
+   * Whether this option is currently selected for the active slot.
+   * Recomputes automatically when activeSlotId or selections change.
+   */
+  readonly isSelected = computed(() => {
+    const activeSlotId = this.selectionUi.activeSlotId();
+    if (activeSlotId === null) return false;
+    return this.boxState.selections()[activeSlotId] === this.coffeeId();
+  });
 
-    this.isSelected$ = combineLatest([
-      this.selectionUiService.activeBoxId$,
-      this.boxStateService.selections$,
-    ]).pipe(
-      map(([activeBoxId, selections]) => {
-        if (activeBoxId === null) return false;
-        return selections[activeBoxId] === this.coffeeId;
-      }),
-    );
-  }
-
+  /**
+   * Handles a click on this option:
+   * 1. Persists the selection via BoxState.onOptionSelected
+   * 2. Advances focus to the next slot via SelectionUi.advanceToNextSlot
+   *
+   * Active slot id is read synchronously from the signal.
+   */
   onOptionClick(): void {
-    const activeBoxId = this.selectionUiService.getActiveBoxIdSnapshot();
-    if (activeBoxId === null) return;
-    this.boxStateService.onOptionSelected(activeBoxId, this.coffeeId);
+    const activeSlotId = this.selectionUi.activeSlotId();
+    if (activeSlotId === null) return;
+    this.boxState.onOptionSelected({ slotId: activeSlotId, coffeeId: this.coffeeId() });
+    this.selectionUi.advanceToNextSlot(activeSlotId);
   }
 }

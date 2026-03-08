@@ -1,74 +1,60 @@
-import { inject, Injectable } from '@angular/core';
-import { BehaviorSubject, map, Observable, Subject } from 'rxjs';
+import { computed, signal } from '@angular/core';
+import { signalStore, withState, withComputed, withMethods, patchState } from '@ngrx/signals';
 import { SLOT_COUNT, type SlotId } from '../models/options.model';
-import { BoxState } from './box-state';
 
 /**
- * SelectionUi — owns purely UI-level state:
- *  - Which box is currently "active" (showing the option selector)
+ * SelectionUi — NgRx SignalStore for purely transient UI state:
+ *  - Which slot is currently "active" (showing the option selector)
  *
  * Keeping this separate from BoxState makes the distinction clear:
  * BoxState = persisted domain state
  * SelectionUi = transient UI state
  *
- * All user actions flow in as observables (boxClick$, optionSelected$ from BoxState).
- * Subscriptions in the constructor react to those streams. Both services are
- * providedIn: 'root', so they (and these subscriptions) live for the app lifetime —
- * no leak, no teardown needed.
+ * State is mutated directly via patchState() in response to user events.
+ * Components read state via signals directly.
  */
-@Injectable({ providedIn: 'root' })
-export class SelectionUi {
-  private readonly boxState = inject(BoxState);
+export const SelectionUi = signalStore(
+  { providedIn: 'root' },
 
-  private readonly activeBoxIdSubject = new BehaviorSubject<SlotId | null>(null);
+  withState({
+    /** The currently active slot id, or null if no slot is selected. */
+    activeSlotId: null as SlotId | null,
+  }),
 
-  readonly activeBoxId$: Observable<SlotId | null> = this.activeBoxIdSubject.asObservable();
+  withComputed(({ activeSlotId }) => ({
+    /**
+     * Whether any slot is currently active.
+     * Used by App to show/hide the OptionSelector panel.
+     */
+    hasActiveSlot: computed(() => activeSlotId() !== null),
+  })),
 
-  /**
-   * Stream of box-click events. Box emits here; constructor subscription toggles active box.
-   */
-  private readonly boxClickSubject = new Subject<SlotId>();
-  readonly boxClick$: Observable<SlotId> = this.boxClickSubject.asObservable();
+  withMethods(({ activeSlotId, ...store }) => ({
+    /**
+     * Called by Box when a slot is clicked.
+     * Toggles the active slot — clicking the already-active slot closes the selector.
+     * @param slotId — 0-based slot index
+     */
+    onBoxClick(slotId: SlotId): void {
+      const next = activeSlotId() === slotId ? null : slotId;
+      patchState(store, { activeSlotId: next });
+    },
 
-  constructor() {
-    // React to box clicks as a stream — toggle active box (or close if same box)
-    this.boxClick$
-      .pipe(map((slotId) => (this.activeBoxIdSubject.getValue() === slotId ? null : slotId)))
-      .subscribe((next) => this.activeBoxIdSubject.next(next));
+    /**
+     * Advances focus to the next slot after an option is selected.
+     * Called by OptionItem after selection. Closes selector if last slot.
+     * @param currentSlotId — 0-based index of the slot that was just selected
+     */
+    advanceToNextSlot(currentSlotId: SlotId): void {
+      const nextId = currentSlotId + 1;
+      patchState(store, { activeSlotId: nextId < SLOT_COUNT ? nextId : null });
+    },
 
-    // React to option selections — auto-advance to next box (or close if last box)
-    this.boxState.optionSelected$
-      .pipe(
-        map(({ slotId }) => {
-          const nextId = slotId + 1;
-          return nextId < SLOT_COUNT? nextId : null;
-        }),
-      )
-      .subscribe((next) => this.activeBoxIdSubject.next(next));
-  }
-
-  /**
-   * Called by Box when a box is clicked. Pushes into boxClick$; constructor handles toggle.
-   * @param slotId — 0-based box index
-   * @returns void
-   */
-  onBoxClick(slotId: SlotId): void {
-    this.boxClickSubject.next(slotId);
-  }
-
-  /**
-   * Synchronous snapshot of the current active box id. Use only in event handlers, not in pipelines.
-   * @returns BoxId of active box, or null if none
-   */
-  getActiveBoxIdSnapshot(): SlotId | null {
-    return this.activeBoxIdSubject.getValue();
-  }
-
-  /**
-   * Closes the option selector (sets active box to null).
-   * @returns void
-   */
-  clearActiveBox(): void {
-    this.activeBoxIdSubject.next(null);
-  }
-}
+    /**
+     * Closes the option selector by clearing the active slot.
+     */
+    clearActiveSlot(): void {
+      patchState(store, { activeSlotId: null });
+    },
+  })),
+);
