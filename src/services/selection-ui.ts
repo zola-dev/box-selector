@@ -42,12 +42,13 @@ export const SelectionUi = signalStore(
 
     /**
      * Advances focus to the next slot after an option is selected.
-     * Called by OptionItem after selection. Closes selector if last slot.
+     * Called by OptionItem after selection.
+     * If the last slot was just selected, stays on it so the user can immediately change their selection.
      * @param currentSlotId — 0-based index of the slot that was just selected
      */
     advanceToNextSlot(currentSlotId: SlotId): void {
       const nextId = currentSlotId + 1;
-      patchState(store, { activeSlotId: nextId < SLOT_COUNT ? nextId : null });
+      patchState(store, { activeSlotId: nextId < SLOT_COUNT ? nextId : currentSlotId });
     },
 
     /**
