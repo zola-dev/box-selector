@@ -53,7 +53,7 @@ export const BoxState = signalStore(
      * @param coffeeId — id of the selected coffee option
      */
     onOptionSelected({ slotId, coffeeId }: CoffeeSelectionEvent): void {
-      const updated = { ...selections(), [slotId]: coffeeId };
+      const updated = updateSelection(selections(), slotId, coffeeId);
       patchState(store, { selections: updated });
       saveToStorage(updated);
     },
@@ -67,6 +67,7 @@ export const BoxState = signalStore(
       const id = selections()[slotId];
       return id ? (optionMap.get(id) ?? null) : null;
     },
+    
     /**
      * Returns the selected coffeeId for a slot, or null if none.
      * @param slotId — 0-based slot index
@@ -85,8 +86,18 @@ export const BoxState = signalStore(
     },
   })),
 );
+
 /** O(1) lookup map from coffeeId → CoffeeOption. Avoids repeated O(n) find calls. */
 const optionMap = new Map(COFFEE_OPTIONS.map((o) => [o.id, o]));
+
+/**
+ * Pure reducer — returns a new OrderMap with the given slot updated.
+ * No side effects; all persistence is handled by the caller.
+ */
+function updateSelection(selections: OrderMap, slotId: SlotId, coffeeId: CoffeeId): OrderMap {
+  return { ...selections, [slotId]: coffeeId };
+}
+
 /**
  * Loads persisted selections from localStorage on app init.
  * Returns empty object if storage is unavailable or corrupted.
