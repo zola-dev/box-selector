@@ -29,7 +29,7 @@ export class BoxState {
   readonly options: CoffeeOption[] = COFFEE_OPTIONS;
 
   /** Box ids 0..BOX_COUNT-1 for iteration in templates. */
-  readonly boxIds: readonly SlotId[] = Array.from({ length: SLOT_COUNT}, (_, i) => i) as SlotId[];
+  readonly boxIds: readonly SlotId[] = Array.from({ length: SLOT_COUNT }, (_, i) => i) as SlotId[];
   /**
    * Stream of option selections. OptionItem emits here; this service persists,
    * and SelectionUi subscribes to auto-advance the active box.
@@ -37,7 +37,8 @@ export class BoxState {
   private readonly optionSelectedSubject = new Subject<CoffeeSelectionEvent>();
   readonly optionSelected$: Observable<CoffeeSelectionEvent> =
     this.optionSelectedSubject.asObservable();
-
+  /** O(1) lookup map from coffeeId → CoffeeOption. Avoids repeated O(n) find calls. */
+  private readonly optionMap = new Map(COFFEE_OPTIONS.map((o) => [o.id, o]));
   constructor() {
     // providedIn: 'root' → singleton for app lifetime; this subscription needs no teardown.
     this.optionSelected$
@@ -77,8 +78,8 @@ export class BoxState {
    */
   getSelectedOption$(slotId: SlotId): Observable<CoffeeOption | null> {
     return this.getSelectionForBox$(slotId).pipe(
-      map((coffeeId) => (coffeeId ? (this.options.find((o) => o.id === coffeeId) ?? null) : null)),
-    );
+      map((coffeeId) => (coffeeId ? (this.optionMap.get(coffeeId) ?? null) : null)),
+  );
   }
 
   /**
@@ -115,13 +116,10 @@ export class BoxState {
 
   /** Sum of scores of all currently selected options (derived from selections$). */
   readonly totalScore$: Observable<number> = this.selections$.pipe(
-    map((selections) => {
-      return Object.values(selections)
+    map((selections) =>
+      Object.values(selections)
         .filter((coffeeId): coffeeId is string => coffeeId !== null)
-        .reduce((sum, coffeeId) => {
-          const option = this.options.find((o) => o.id === coffeeId);
-          return sum + (option?.score ?? 0);
-        }, 0);
-    }),
+        .reduce((sum, coffeeId) => sum + (this.optionMap.get(coffeeId)?.score ?? 0), 0),
+    ),
   );
 }
