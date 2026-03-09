@@ -39,12 +39,20 @@ export class BoxState {
     this.optionSelectedSubject.asObservable();
   /** O(1) lookup map from coffeeId → CoffeeOption. Avoids repeated O(n) find calls. */
   private readonly optionMap = new Map(COFFEE_OPTIONS.map((o) => [o.id, o]));
+  /**
+   * Pure reducer — returns a new OrderMap with the given slot updated.
+   * No side effects; all persistence is handled by the caller.
+   */
+  private updateSelection(slotId: SlotId, coffeeId: CoffeeId): OrderMap {
+    return { ...this.selectionsSubject.getValue(), [slotId]: coffeeId };
+  }
+  
   constructor() {
     // providedIn: 'root' → singleton for app lifetime; this subscription needs no teardown.
     this.optionSelected$
       .pipe(
         tap(({ slotId, coffeeId }) => {
-          const updated = { ...this.selectionsSubject.getValue(), [slotId]: coffeeId };
+          const updated = this.updateSelection(slotId, coffeeId);
           this.selectionsSubject.next(updated);
           this.saveToStorage(updated);
         }),
@@ -79,7 +87,7 @@ export class BoxState {
   getSelectedOption$(slotId: SlotId): Observable<CoffeeOption | null> {
     return this.getSelectionForBox$(slotId).pipe(
       map((coffeeId) => (coffeeId ? (this.optionMap.get(coffeeId) ?? null) : null)),
-  );
+    );
   }
 
   /**
