@@ -22,7 +22,6 @@ import {
 @Injectable({ providedIn: 'root' })
 export class BoxState {
   private readonly selectionsSubject = new BehaviorSubject<OrderMap>(this.loadFromStorage());
-
   readonly selections$: Observable<OrderMap> = this.selectionsSubject.asObservable();
 
   // The static list of all available options
@@ -30,21 +29,32 @@ export class BoxState {
 
   /** Box ids 0..BOX_COUNT-1 for iteration in templates. */
   readonly boxIds: readonly SlotId[] = Array.from({ length: SLOT_COUNT }, (_, i) => i) as SlotId[];
+
   /**
    * Stream of option selections. OptionItem emits here; this service persists,
    * and SelectionUi subscribes to auto-advance the active box.
    */
   private readonly optionSelectedSubject = new Subject<CoffeeSelectionEvent>();
-  readonly optionSelected$: Observable<CoffeeSelectionEvent> =
-    this.optionSelectedSubject.asObservable();
+
+  readonly optionSelected$: Observable<CoffeeSelectionEvent> = this.optionSelectedSubject.asObservable();
+
   /** O(1) lookup map from coffeeId → CoffeeOption. Avoids repeated O(n) find calls. */
   private readonly optionMap = new Map(COFFEE_OPTIONS.map((o) => [o.id, o]));
+
   /**
    * Pure reducer — returns a new OrderMap with the given slot updated.
    * No side effects; all persistence is handled by the caller.
    */
   private updateSelection(slotId: SlotId, coffeeId: CoffeeId): OrderMap {
     return { ...this.selectionsSubject.getValue(), [slotId]: coffeeId };
+  }
+
+  /**
+   * Returns the CoffeeOption for a given coffeeId via O(1) Map lookup, or null if not found.
+   * @param coffeeId — id of the coffee option to look up
+   */
+  getOption(coffeeId: CoffeeId): CoffeeOption | null {
+    return this.optionMap.get(coffeeId) ?? null;
   }
   
   constructor() {

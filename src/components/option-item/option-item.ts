@@ -31,7 +31,7 @@ export class OptionItem implements OnInit {
   isSelected$!: Observable<boolean>;
 
   ngOnInit(): void {
-    const option = this.boxStateService.options.find((o) => o.id === this.coffeeId)!;
+    const option = this.boxStateService.getOption(this.coffeeId)!;
     this.label = option.label;
     this.value = option.value;
 
