@@ -1,5 +1,5 @@
 <div class="option-selector" role="listbox">
-    <h3 class="option-selector__title">Box {{ activeBoxLabel$ | async }} — choose an option</h3>
+    <h3 class="option-selector__title">Box {{ activeBoxLabel$ | async }} — choose a coffee</h3>
     <div class="option-selector__list">
       @for (coffeeId of optionIds; track coffeeId) {
         <app-option-item [coffeeId]="coffeeId" />
