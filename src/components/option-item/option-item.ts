@@ -44,6 +44,10 @@ export class OptionItem {
    */
   readonly value = computed(() => this.option()?.value ?? '');
 
+  //NOTE: Each OptionItem creates its own computed signal (activeSlotId + selections).
+  //This means N options = N computed signals. For a larger dataset, isSelected would be derived 
+  // once in the service or parent and passed downas a boolean input() — reducing computeds to 1.
+  //Kept here due to assignment constraint: no @Output, state must live in services.
   /**
    * Whether this option is currently selected for the active slot.
    * Recomputes automatically when activeSlotId or selections change.
