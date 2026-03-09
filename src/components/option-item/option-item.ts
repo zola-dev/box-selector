@@ -27,7 +27,10 @@ export class OptionItem implements OnInit {
   label = '';
   value = '';
 
-  // Reactive — only what actually changes needs to be an observable
+  // NOTE: Each OptionItem creates its own combineLatest stream.
+  // For a larger dataset, isSelected would be derived once in the service or parent 
+  // and passed down as a boolean @Input — reducing streams to 1.
+  // Kept here due to assignment constraint: no @Output, state must live in services.
   isSelected$!: Observable<boolean>;
 
   ngOnInit(): void {
