@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { BehaviorSubject, map, Observable, Subject } from 'rxjs';
+import { BehaviorSubject, distinctUntilChanged, map, Observable, Subject } from 'rxjs';
 import { SLOT_COUNT, type SlotId } from '../models/options.model';
 import { BoxState } from './box-state';
 
@@ -22,7 +22,7 @@ export class SelectionUi {
 
   private readonly activeBoxIdSubject = new BehaviorSubject<SlotId | null>(null);
 
-  readonly activeBoxId$: Observable<SlotId | null> = this.activeBoxIdSubject.asObservable();
+  readonly activeBoxId$: Observable<SlotId | null> = this.activeBoxIdSubject.pipe(distinctUntilChanged());
 
   /**
    * Stream of box-click events. Box emits here; constructor subscription toggles active box.
