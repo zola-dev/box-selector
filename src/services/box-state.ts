@@ -41,10 +41,7 @@ export const BoxState = signalStore(
     totalScore: computed(() =>
       Object.values(selections())
         .filter((id): id is CoffeeId => id !== null)
-        .reduce((sum, id) => {
-          const option = COFFEE_OPTIONS.find((o) => o.id === id);
-          return sum + (option?.score ?? 0);
-        }, 0),
+        .reduce((sum, id) => sum + (optionMap.get(id)?.score ?? 0), 0),
     ),
   })),
 
@@ -68,9 +65,8 @@ export const BoxState = signalStore(
      */
     getSelectedOption(slotId: SlotId): CoffeeOption | null {
       const id = selections()[slotId];
-      return id ? (COFFEE_OPTIONS.find((o) => o.id === id) ?? null) : null;
+      return id ? (optionMap.get(id) ?? null) : null;
     },
-
     /**
      * Returns the selected coffeeId for a slot, or null if none.
      * @param slotId — 0-based slot index
@@ -89,7 +85,8 @@ export const BoxState = signalStore(
     },
   })),
 );
-
+/** O(1) lookup map from coffeeId → CoffeeOption. Avoids repeated O(n) find calls. */
+const optionMap = new Map(COFFEE_OPTIONS.map((o) => [o.id, o]));
 /**
  * Loads persisted selections from localStorage on app init.
  * Returns empty object if storage is unavailable or corrupted.
