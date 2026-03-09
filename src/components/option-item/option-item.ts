@@ -30,9 +30,7 @@ export class OptionItem {
   /**
    * The CoffeeOption resolved from the static list for this coffeeId, or null if not found.
    */
-  readonly option = computed(
-    () => this.boxState.options().find((o) => o.id === this.coffeeId()) ?? null,
-  );
+  readonly option = computed(() => this.boxState.getOption(this.coffeeId()));
 
   /**
    * The display label of this coffee option (e.g. 'Espresso', 'Cold Brew').

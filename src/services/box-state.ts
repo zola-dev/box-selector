@@ -67,7 +67,7 @@ export const BoxState = signalStore(
       const id = selections()[slotId];
       return id ? (optionMap.get(id) ?? null) : null;
     },
-    
+
     /**
      * Returns the selected coffeeId for a slot, or null if none.
      * @param slotId — 0-based slot index
@@ -75,6 +75,14 @@ export const BoxState = signalStore(
      */
     getSelectionForSlot(slotId: SlotId): CoffeeId | null {
       return selections()[slotId] ?? null;
+    },
+
+    /**
+     * Returns the CoffeeOption for a given coffeeId via O(1) Map lookup, or null if not found.
+     * @param coffeeId — id of the coffee option to look up
+     */
+    getOption(coffeeId: CoffeeId): CoffeeOption | null {
+      return optionMap.get(coffeeId) ?? null;
     },
 
     /**
