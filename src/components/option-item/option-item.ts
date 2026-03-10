@@ -26,13 +26,14 @@ export class OptionItem implements OnInit {
   // Static — set once in ngOnInit, never changes
   label = '';
   value = '';
-
-  // NOTE: Each OptionItem creates its own combineLatest stream.
-  // For a larger dataset, isSelected would be derived once in the service or parent
-  // and passed down as a boolean @Input — reducing streams to 1.
-  // Kept here due to assignment constraint: no @Output, state must live in services.
+  public test = 'test';
   /**
    * Whether this option is currently selected for the active box.
+   * 
+   * NOTE: Each OptionItem creates its own combineLatest stream (activeBoxId$ + selections$).
+   * This means N options = N streams. For a larger dataset, isSelected would be derived
+   * once in the service or parent and passed down as a boolean @Input — reducing N streams to 1.
+   * Kept here due to assignment constraint: no @Output, state must live in services.
    */
   isSelected$!: Observable<boolean>;
 
