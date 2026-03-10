@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
-import { Observable, combineLatest, map } from 'rxjs';
-import { BoxState } from '../../services/box-state';
+import { Observable } from 'rxjs';
 import { SelectionUi } from '../../services/selection-ui';
 import { type SlotId, CoffeeOption } from '../../models/options.model';
 
@@ -24,17 +23,11 @@ interface BoxViewModel {
 })
 export class Box implements OnInit {
   @Input({ required: true }) slotId!: SlotId;
-  private readonly boxStateService = inject(BoxState);
   private readonly selectionUiService = inject(SelectionUi);
   vm$!: Observable<BoxViewModel>;
 
   ngOnInit(): void {
-    this.vm$ = combineLatest({
-      selectedOption: this.boxStateService.getSelectedOption$(this.slotId),
-      isActive: this.selectionUiService.activeBoxId$.pipe(
-        map((activeId) => activeId === this.slotId),
-      ),
-    });
+    this.vm$ = this.selectionUiService.getBoxViewModel$(this.slotId);
   }
 
   /**

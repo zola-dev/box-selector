@@ -8,8 +8,17 @@ import {
   shareReplay,
   Subject,
 } from 'rxjs';
-import { CoffeeId, SLOT_COUNT, type SlotId } from '../models/options.model';
+import { CoffeeId, CoffeeOption, SLOT_COUNT, type SlotId } from '../models/options.model';
 import { BoxState } from './box-state';
+
+/**
+ * View model for a single box slot — combines selection and active state.
+ * Exposed by SelectionUi.getBoxViewModel$ for use in Box component.
+ */
+export interface BoxViewModel {
+  selectedOption: CoffeeOption | null;
+  isActive: boolean;
+}
 
 /**
  * SelectionUi — owns purely UI-level state:
@@ -98,5 +107,18 @@ export class SelectionUi {
     const activeBoxId = this.activeBoxIdSubject.getValue();
     if (activeBoxId === null) return;
     this.boxState.onOptionSelected(activeBoxId, coffeeId);
+  }
+
+  /**
+   * Observable view model for a single box slot.
+   * Combines selectedOption and isActive into one stream — component does not need to combine these.
+   * @param slotId — 0-based slot index
+   * @returns Observable<BoxViewModel> — emits on every selection or active box change
+   */
+  getBoxViewModel$(slotId: SlotId): Observable<BoxViewModel> {
+    return combineLatest({
+      selectedOption: this.boxState.getSelectedOption$(slotId),
+      isActive: this.activeBoxId$.pipe(map((activeId) => activeId === slotId)),
+    }).pipe(shareReplay(1));
   }
 }
