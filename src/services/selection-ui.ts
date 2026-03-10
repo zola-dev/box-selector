@@ -1,6 +1,14 @@
 import { inject, Injectable } from '@angular/core';
-import { BehaviorSubject, distinctUntilChanged, map, Observable, Subject } from 'rxjs';
-import { SLOT_COUNT, type SlotId } from '../models/options.model';
+import {
+  BehaviorSubject,
+  combineLatest,
+  distinctUntilChanged,
+  map,
+  Observable,
+  shareReplay,
+  Subject,
+} from 'rxjs';
+import { CoffeeId, SLOT_COUNT, type SlotId } from '../models/options.model';
 import { BoxState } from './box-state';
 
 /**
@@ -22,7 +30,8 @@ export class SelectionUi {
 
   private readonly activeBoxIdSubject = new BehaviorSubject<SlotId | null>(null);
 
-  readonly activeBoxId$: Observable<SlotId | null> = this.activeBoxIdSubject.pipe(distinctUntilChanged());
+  readonly activeBoxId$: Observable<SlotId | null> =
+    this.activeBoxIdSubject.pipe(distinctUntilChanged());
 
   /**
    * Stream of box-click events. Box emits here; constructor subscription toggles active box.
@@ -41,7 +50,7 @@ export class SelectionUi {
       .pipe(
         map(({ slotId }) => {
           const nextId = slotId + 1;
-          return nextId < SLOT_COUNT? nextId : slotId;
+          return nextId < SLOT_COUNT ? nextId : slotId;
         }),
       )
       .subscribe((next) => this.activeBoxIdSubject.next(next));
@@ -57,18 +66,37 @@ export class SelectionUi {
   }
 
   /**
-   * Synchronous snapshot of the current active box id. Use only in event handlers, not in pipelines.
-   * @returns BoxId of active box, or null if none
-   */
-  getActiveBoxIdSnapshot(): SlotId | null {
-    return this.activeBoxIdSubject.getValue();
-  }
-
-  /**
    * Closes the option selector (sets active box to null).
    * @returns void
    */
   clearActiveBox(): void {
     this.activeBoxIdSubject.next(null);
+  }
+
+  /**
+   * Observable of whether a given coffeeId is selected for the currently active box.
+   * Derived from activeBoxId$ and selections$ — component does not need to combine these.
+   * @param coffeeId — id of the coffee option to check
+   */
+  isOptionSelected$(coffeeId: CoffeeId): Observable<boolean> {
+    return combineLatest([this.activeBoxId$, this.boxState.selections$]).pipe(
+      map(([activeBoxId, selections]) => {
+        if (activeBoxId === null) return false;
+        return selections[activeBoxId] === coffeeId;
+      }),
+      distinctUntilChanged(),
+      shareReplay(1),
+    );
+  }
+
+  /**
+   * Handles a coffee option click — persists selection via BoxState
+   * and emits to optionSelected$ stream for auto-advance.
+   * @param coffeeId — id of the selected coffee option
+   */
+  onOptionClick(coffeeId: CoffeeId): void {
+    const activeBoxId = this.activeBoxIdSubject.getValue();
+    if (activeBoxId === null) return;
+    this.boxState.onOptionSelected(activeBoxId, coffeeId);
   }
 }

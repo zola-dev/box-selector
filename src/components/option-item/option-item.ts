@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
-import { Observable, combineLatest, map } from 'rxjs';
+import { Observable } from 'rxjs';
 import { type CoffeeId } from '../../models/options.model';
 import { BoxState } from '../../services/box-state';
 import { SelectionUi } from '../../services/selection-ui';
@@ -40,21 +40,10 @@ export class OptionItem implements OnInit {
     const option = this.boxStateService.getOption(this.coffeeId)!;
     this.label = option.label;
     this.value = option.value;
-
-    this.isSelected$ = combineLatest([
-      this.selectionUiService.activeBoxId$,
-      this.boxStateService.selections$,
-    ]).pipe(
-      map(([activeBoxId, selections]) => {
-        if (activeBoxId === null) return false;
-        return selections[activeBoxId] === this.coffeeId;
-      }),
-    );
+    this.isSelected$ = this.selectionUiService.isOptionSelected$(this.coffeeId);
   }
 
   onOptionClick(): void {
-    const activeBoxId = this.selectionUiService.getActiveBoxIdSnapshot();
-    if (activeBoxId === null) return;
-    this.boxStateService.onOptionSelected(activeBoxId, this.coffeeId);
+    this.selectionUiService.onOptionClick(this.coffeeId);
   }
 }
