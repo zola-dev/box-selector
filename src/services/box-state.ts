@@ -1,5 +1,13 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, Subject, map, tap } from 'rxjs';
+import {
+  BehaviorSubject,
+  Observable,
+  Subject,
+  distinctUntilChanged,
+  map,
+  shareReplay,
+  tap,
+} from 'rxjs';
 import {
   SLOT_COUNT,
   COFFEE_OPTIONS,
@@ -36,10 +44,17 @@ export class BoxState {
    */
   private readonly optionSelectedSubject = new Subject<CoffeeSelectionEvent>();
 
-  readonly optionSelected$: Observable<CoffeeSelectionEvent> = this.optionSelectedSubject.asObservable();
+  readonly optionSelected$: Observable<CoffeeSelectionEvent> =
+    this.optionSelectedSubject.asObservable();
 
   /** O(1) lookup map from coffeeId → CoffeeOption. Avoids repeated O(n) find calls. */
   private readonly optionMap = new Map(COFFEE_OPTIONS.map((o) => [o.id, o]));
+
+  /** Memoized observables per slotId — avoids creating new chains on every call. */
+  private readonly selectionForBoxCache = new Map<SlotId, Observable<CoffeeId | null>>();
+
+  /** Memoized observables per slotId — avoids creating new chains on every call. */
+  private readonly selectedOptionCache = new Map<SlotId, Observable<CoffeeOption | null>>();
 
   /**
    * Pure reducer — returns a new OrderMap with the given slot updated.
@@ -56,7 +71,7 @@ export class BoxState {
   getOption(coffeeId: CoffeeId): CoffeeOption | null {
     return this.optionMap.get(coffeeId) ?? null;
   }
-  
+
   constructor() {
     // providedIn: 'root' → singleton for app lifetime; this subscription needs no teardown.
     this.optionSelected$
@@ -82,22 +97,41 @@ export class BoxState {
 
   /**
    * Observable of the selected option id for a specific box, or null if none.
+   * Memoized per slotId — the same observable instance is returned on repeated calls.
    * @param slotId — 0-based box index
    * @returns Observable<OptionId | null>
    */
   getSelectionForBox$(slotId: SlotId): Observable<CoffeeId | null> {
-    return this.selections$.pipe(map((selections) => selections[slotId] ?? null));
+    if (!this.selectionForBoxCache.has(slotId)) {
+      this.selectionForBoxCache.set(
+        slotId,
+        this.selections$.pipe(
+          map((selections) => selections[slotId] ?? null),
+          distinctUntilChanged(),
+          shareReplay(1),
+        ),
+      );
+    }
+    return this.selectionForBoxCache.get(slotId)!;
   }
 
   /**
    * Observable of the full CoffeeOption for a box, or null if none selected.
+   * Memoized per slotId — the same observable instance is returned on repeated calls.
    * @param slotId — 0-based box index
    * @returns Observable<CoffeeOption | null>
    */
   getSelectedOption$(slotId: SlotId): Observable<CoffeeOption | null> {
-    return this.getSelectionForBox$(slotId).pipe(
-      map((coffeeId) => (coffeeId ? (this.optionMap.get(coffeeId) ?? null) : null)),
-    );
+    if (!this.selectedOptionCache.has(slotId)) {
+      this.selectedOptionCache.set(
+        slotId,
+        this.getSelectionForBox$(slotId).pipe(
+          map((coffeeId) => (coffeeId ? (this.optionMap.get(coffeeId) ?? null) : null)),
+          shareReplay(1),
+        ),
+      );
+    }
+    return this.selectedOptionCache.get(slotId)!;
   }
 
   /**
