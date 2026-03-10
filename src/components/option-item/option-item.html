@@ -1,7 +1,10 @@
 <div
   class="option-item clickable-card"
+  tabindex="0"
   [class.option-item--selected]="isSelected()"
   (click)="onOptionClick()"
+  [attr.aria-selected]="isSelected()"
+  (keydown.enter)="onOptionClick()"
   role="option"
 >
   <span class="option-item__label">{{ label() }}</span>

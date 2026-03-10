@@ -126,5 +126,7 @@ function loadFromStorage(): OrderMap {
 function saveToStorage(state: OrderMap): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch {}
+  } catch (_e) {
+    void _e;
+  }
 }
