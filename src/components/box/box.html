@@ -1,6 +1,7 @@
 @if (vm$ | async; as vm) {
   <div
     class="box clickable-card"
+    tabindex="0"
     [class.box--active]="vm.isActive"
     [class.box--selected]="vm.selectedOption !== null"
     (click)="onBoxClick()"

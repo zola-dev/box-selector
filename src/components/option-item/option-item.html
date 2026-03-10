@@ -3,6 +3,9 @@
   [class.option-item--selected]="isSelected$ | async"
   (click)="onOptionClick()"
   role="option"
+  tabindex="0"
+  [attr.aria-selected]="isSelected$ | async"
+  (keydown.enter)="onOptionClick()"
 >
   <span class="option-item__label">{{ label }}</span>
   <span class="option-item__value">{{ value }}</span>
