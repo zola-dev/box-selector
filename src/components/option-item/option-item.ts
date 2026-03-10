@@ -44,31 +44,22 @@ export class OptionItem {
    */
   readonly value = computed(() => this.option()?.value ?? '');
 
-  //NOTE: Each OptionItem creates its own computed signal (activeSlotId + selections).
-  //This means N options = N computed signals. For a larger dataset, isSelected would be derived 
-  // once in the service or parent and passed downas a boolean input() — reducing computeds to 1.
-  //Kept here due to assignment constraint: no @Output, state must live in services.
   /**
    * Whether this option is currently selected for the active slot.
-   * Recomputes automatically when activeSlotId or selections change.
+   * Delegates to SelectionUi.isOptionSelected for clean separation of concerns.
+   *
+   * NOTE: Each OptionItem creates its own computed signal wrapping isOptionSelected.
+   * This means N options = N computed signals. For a larger dataset, isSelected would
+   * be derived once in the store and passed down as a boolean input() — reducing
+   * computeds to 1. Kept here due to assignment constraint: state must live in services.
    */
-  readonly isSelected = computed(() => {
-    const activeSlotId = this.selectionUi.activeSlotId();
-    if (activeSlotId === null) return false;
-    return this.boxState.selections()[activeSlotId] === this.coffeeId();
-  });
+  readonly isSelected = computed(() => this.selectionUi.isOptionSelected(this.coffeeId()));
 
   /**
-   * Handles a click on this option:
-   * 1. Persists the selection via BoxState.onOptionSelected
-   * 2. Advances focus to the next slot via SelectionUi.advanceToNextSlot
-   *
-   * Active slot id is read synchronously from the signal.
+   * Delegates the option click to SelectionUi.onOptionClick,
+   * which persists the selection and advances to the next slot.
    */
   onOptionClick(): void {
-    const activeSlotId = this.selectionUi.activeSlotId();
-    if (activeSlotId === null) return;
-    this.boxState.onOptionSelected({ slotId: activeSlotId, coffeeId: this.coffeeId() });
-    this.selectionUi.advanceToNextSlot(activeSlotId);
+    this.selectionUi.onOptionClick(this.coffeeId());
   }
 }

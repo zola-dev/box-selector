@@ -1,6 +1,7 @@
-import { computed } from '@angular/core';
+import { computed, inject } from '@angular/core';
 import { signalStore, withState, withComputed, withMethods, patchState } from '@ngrx/signals';
-import { SLOT_COUNT, type SlotId } from '../models/options.model';
+import { CoffeeId, SLOT_COUNT, type SlotId } from '../models/options.model';
+import { BoxState } from './box-state';
 
 /**
  * SelectionUi — NgRx SignalStore for purely transient UI state:
@@ -29,33 +30,53 @@ export const SelectionUi = signalStore(
     hasActiveSlot: computed(() => activeSlotId() !== null),
   })),
 
-  withMethods(({ activeSlotId, ...store }) => ({
-    /**
-     * Called by Box when a slot is clicked.
-     * Toggles the active slot — clicking the already-active slot closes the selector.
-     * @param slotId — 0-based slot index
-     */
-    onBoxClick(slotId: SlotId): void {
-      const next = activeSlotId() === slotId ? null : slotId;
-      patchState(store, { activeSlotId: next });
-    },
-
-    /**
-     * Advances focus to the next slot after an option is selected.
-     * Called by OptionItem after selection.
-     * If the last slot was just selected, stays on it so the user can immediately change their selection.
-     * @param currentSlotId — 0-based index of the slot that was just selected
-     */
-    advanceToNextSlot(currentSlotId: SlotId): void {
-      const nextId = currentSlotId + 1;
-      patchState(store, { activeSlotId: nextId < SLOT_COUNT ? nextId : currentSlotId });
-    },
-
-    /**
-     * Closes the option selector by clearing the active slot.
-     */
-    clearActiveSlot(): void {
-      patchState(store, { activeSlotId: null });
-    },
-  })),
+  withMethods(({ activeSlotId, ...store }) => {
+    const boxState = inject(BoxState);
+  
+    return {
+      /**
+       * Called by Box when a slot is clicked.
+       * Toggles the active slot — clicking the already-active slot closes the selector.
+       * @param slotId — 0-based slot index to toggle
+       * @returns void
+       */
+      onBoxClick(slotId: SlotId): void {
+        const next = activeSlotId() === slotId ? null : slotId;
+        patchState(store, { activeSlotId: next });
+      },
+  
+      /**
+       * Closes the option selector by clearing the active slot.
+       * @returns void
+       */
+      clearActiveSlot(): void {
+        patchState(store, { activeSlotId: null });
+      },
+  
+      /**
+       * Whether a given coffeeId is selected for the currently active slot.
+       * Derived from activeSlotId and BoxState.selections — component does not need to combine these.
+       * @param coffeeId — id of the coffee option to check
+       * @returns boolean
+       */
+      isOptionSelected(coffeeId: CoffeeId): boolean {
+        const slot = activeSlotId();
+        if (slot === null) return false;
+        return boxState.selections()[slot] === coffeeId;
+      },
+  
+      /**
+       * Handles a coffee option click — persists selection via BoxState and advances to next slot.
+       * @param coffeeId — id of the coffee option to click
+       * @returns void
+       */
+      onOptionClick(coffeeId: CoffeeId): void {
+        const slot = activeSlotId();
+        if (slot === null) return;
+        boxState.onOptionSelected({ slotId: slot, coffeeId });
+        const nextId = slot + 1;
+        patchState(store, { activeSlotId: nextId < SLOT_COUNT ? nextId : slot });
+      },
+    };
+  }),
 );
