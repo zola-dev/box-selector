@@ -21,6 +21,15 @@ export interface CoffeeSelectionEvent {
   coffeeId: CoffeeId;
 }
 
+/**
+ * View model for a single box slot — combines selection and active state.
+ * Exposed by SelectionUi.getBoxViewModel$ for use in Box component.
+ */
+export interface BoxViewModel {
+  selectedOption: CoffeeOption | null;
+  isActive: boolean;
+}
+
 export const COFFEE_OPTIONS: CoffeeOption[] = [
   { id: 'coffee-1',  label: 'Espresso',       value: 'pure shot',     score: 63  },
   { id: 'coffee-2',  label: 'Double Espresso', value: 'double shot',  score: 126 },

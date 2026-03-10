@@ -2,12 +2,7 @@ import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angu
 import { AsyncPipe } from '@angular/common';
 import { Observable } from 'rxjs';
 import { SelectionUi } from '../../services/selection-ui';
-import { type SlotId, CoffeeOption } from '../../models/options.model';
-
-interface BoxViewModel {
-  selectedOption: CoffeeOption | null;
-  isActive: boolean;
-}
+import { type SlotId, type BoxViewModel } from '../../models/options.model';
 
 /**
  * Single selectable box in the grid. Input: slotId only; state derived from BoxState and SelectionUi.

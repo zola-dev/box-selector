@@ -8,17 +8,8 @@ import {
   shareReplay,
   Subject,
 } from 'rxjs';
-import { CoffeeId, CoffeeOption, SLOT_COUNT, type SlotId } from '../models/options.model';
+import { CoffeeId, SLOT_COUNT, type SlotId, type BoxViewModel  } from '../models/options.model';
 import { BoxState } from './box-state';
-
-/**
- * View model for a single box slot — combines selection and active state.
- * Exposed by SelectionUi.getBoxViewModel$ for use in Box component.
- */
-export interface BoxViewModel {
-  selectedOption: CoffeeOption | null;
-  isActive: boolean;
-}
 
 /**
  * SelectionUi — owns purely UI-level state:
